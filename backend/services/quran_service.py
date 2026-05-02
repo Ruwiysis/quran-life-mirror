@@ -1,72 +1,114 @@
-import httpx
-from typing import Dict
+import httpx, re, os
+from dotenv import load_dotenv
+from services.qf_auth_service import get_content_token, get_content_headers
 
-QURAN_API    = "https://api.qurancdn.com/api/qdc"
-TRANSLATION_ID = 131   # Saheeh International
-RECITATION_ID  = 7     # Mishary Rashid Al-Afasy
+load_dotenv()
+QF_API_BASE = os.getenv("QF_API_BASE")
 
 SURAH_NAMES = {
-    "1":"Al-Fatihah","2":"Al-Baqarah","3":"Ali 'Imran","4":"An-Nisa","5":"Al-Ma'idah",
-    "6":"Al-An'am","7":"Al-A'raf","8":"Al-Anfal","9":"At-Tawbah","10":"Yunus",
-    "11":"Hud","12":"Yusuf","13":"Ar-Ra'd","14":"Ibrahim","15":"Al-Hijr",
+    "1":"Al-Fatihah","2":"Al-Baqarah","3":"Ali Imran","4":"An-Nisa","5":"Al-Maidah",
+    "6":"Al-Anam","7":"Al-Araf","8":"Al-Anfal","9":"At-Tawbah","10":"Yunus",
+    "11":"Hud","12":"Yusuf","13":"Ar-Rad","14":"Ibrahim","15":"Al-Hijr",
     "16":"An-Nahl","17":"Al-Isra","18":"Al-Kahf","19":"Maryam","20":"Ta-Ha",
-    "21":"Al-Anbiya","22":"Al-Hajj","23":"Al-Mu'minun","24":"An-Nur","25":"Al-Furqan",
-    "26":"Ash-Shu'ara","27":"An-Naml","28":"Al-Qasas","29":"Al-'Ankabut","30":"Ar-Rum",
-    "31":"Luqman","32":"As-Sajdah","33":"Al-Ahzab","34":"Saba","35":"Fatir",
-    "36":"Ya-Sin","37":"As-Saffat","38":"Sad","39":"Az-Zumar","40":"Ghafir",
-    "41":"Fussilat","42":"Ash-Shura","43":"Az-Zukhruf","44":"Ad-Dukhan","45":"Al-Jathiyah",
-    "46":"Al-Ahqaf","47":"Muhammad","48":"Al-Fath","49":"Al-Hujurat","50":"Qaf",
-    "51":"Adh-Dhariyat","52":"At-Tur","53":"An-Najm","54":"Al-Qamar","55":"Ar-Rahman",
-    "56":"Al-Waqi'ah","57":"Al-Hadid","58":"Al-Mujadila","59":"Al-Hashr","60":"Al-Mumtahanah",
-    "61":"As-Saf","62":"Al-Jumu'ah","63":"Al-Munafiqun","64":"At-Taghabun","65":"At-Talaq",
-    "66":"At-Tahrim","67":"Al-Mulk","68":"Al-Qalam","69":"Al-Haqqah","70":"Al-Ma'arij",
-    "71":"Nuh","72":"Al-Jinn","73":"Al-Muzzammil","74":"Al-Muddaththir","75":"Al-Qiyamah",
-    "76":"Al-Insan","77":"Al-Mursalat","78":"An-Naba","79":"An-Nazi'at","80":"'Abasa",
-    "81":"At-Takwir","82":"Al-Infitar","83":"Al-Mutaffifin","84":"Al-Inshiqaq","85":"Al-Buruj",
-    "86":"At-Tariq","87":"Al-A'la","88":"Al-Ghashiyah","89":"Al-Fajr","90":"Al-Balad",
-    "91":"Ash-Shams","92":"Al-Layl","93":"Ad-Duha","94":"Ash-Sharh","95":"At-Tin",
-    "96":"Al-'Alaq","97":"Al-Qadr","98":"Al-Bayyinah","99":"Az-Zalzalah","100":"Al-'Adiyat",
-    "101":"Al-Qari'ah","102":"At-Takathur","103":"Al-'Asr","104":"Al-Humazah","105":"Al-Fil",
-    "106":"Quraysh","107":"Al-Ma'un","108":"Al-Kawthar","109":"Al-Kafirun","110":"An-Nasr",
-    "111":"Al-Masad","112":"Al-Ikhlas","113":"Al-Falaq","114":"An-Nas"
+    "21":"Al-Anbiya","22":"Al-Hajj","23":"Al-Muminun","24":"An-Nur","25":"Al-Furqan",
+    "26":"Ash-Shuara","27":"An-Naml","28":"Al-Qasas","29":"Al-Ankabut","30":"Ar-Rum",
+    "39":"Az-Zumar","50":"Qaf","51":"Adh-Dhariyat","57":"Al-Hadid","58":"Al-Mujadila",
+    "65":"At-Talaq","66":"At-Tahrim","67":"Al-Mulk","84":"Al-Inshiqaq",
+    "93":"Ad-Duhaa","94":"Ash-Sharh","98":"Al-Bayyina","103":"Al-Asr"
 }
 
-async def get_surah_name(verse_key: str) -> str:
-    surah_num = verse_key.split(":")[0]
-    return SURAH_NAMES.get(surah_num, f"Surah {surah_num}")
+_verse_cache = {}
+_audio_cache = {}
 
-async def get_verse(verse_key: str) -> Dict:
-    """Get verse with Arabic text and translation."""
-    async with httpx.AsyncClient(timeout=15.0) as client:
-        r = await client.get(
-            f"{QURAN_API}/verses/{verse_key}",
-            params={"translations": TRANSLATION_ID, "fields": "text_uthmani"}
-        )
-        r.raise_for_status()
-        verse = r.json()["verse"]
-        translation_text = verse.get("translations", [{}])[0].get("text", "")
-        # Strip HTML tags from translation
-        import re
-        translation_text = re.sub(r"<[^>]+>", "", translation_text)
-        return {
-            "arabic": verse.get("text_uthmani", ""),
-            "translation": translation_text
-        }
+async def get_verse(verse_key: str) -> dict:
+    if verse_key in _verse_cache:
+        return _verse_cache[verse_key]
 
-async def get_audio_url(verse_key: str) -> str:
-    """Get audio recitation URL for verse."""
+    surah, ayah = verse_key.split(":")
+    ayah_num = int(ayah)
+
+    # Try QF API first
+    try:
+        token = await get_content_token()
+        headers = get_content_headers(token)
+        per_page = 50
+        page = ((ayah_num - 1) // per_page) + 1
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            r = await client.get(
+                f"{QF_API_BASE}/content/api/v4/verses/by_chapter/{surah}",
+                params={"translations": "131", "fields": "text_uthmani", "per_page": str(per_page), "page": str(page)},
+                headers=headers
+            )
+            if r.status_code == 200:
+                verses = r.json().get("verses", [])
+                for v in verses:
+                    if v.get("verse_number") == ayah_num:
+                        tr = re.sub(r"<[^>]+>", "", (v.get("translations") or [{}])[0].get("text", ""))
+                        result = {"arabic": v.get("text_uthmani", ""), "translation": tr}
+                        _verse_cache[verse_key] = result
+                        return result
+    except Exception:
+        pass
+
+    # Fallback: alquran.cloud (gets arabic, translation, AND audio in one call)
     try:
         async with httpx.AsyncClient(timeout=10.0) as client:
             r = await client.get(
-                f"{QURAN_API}/audio/recitations/{RECITATION_ID}/by_ayah/{verse_key}"
+                f"https://api.alquran.cloud/v1/ayah/{surah}:{ayah}/editions/quran-uthmani,en.asad,ar.alafasy"
             )
-            r.raise_for_status()
-            files = r.json().get("audio_files", [])
-            if files:
-                url = files[0].get("url", "")
-                if url and not url.startswith("http"):
-                    url = f"https://verses.quran.com/{url}"
-                return url
+            if r.status_code == 200:
+                data = r.json().get("data", [])
+                arabic = data[0].get("text", "") if len(data) > 0 else ""
+                translation = data[1].get("text", "") if len(data) > 1 else ""
+                audio = data[2].get("audio", "") if len(data) > 2 else ""
+                if audio:
+                    _audio_cache[verse_key] = audio
+                result = {"arabic": arabic, "translation": translation}
+                _verse_cache[verse_key] = result
+                return result
+    except Exception:
+        pass
+
+    raise Exception(f"Could not fetch verse {verse_key}")
+
+async def get_audio_url(verse_key: str) -> str:
+    # Return cached audio from get_verse call if available
+    if verse_key in _audio_cache:
+        return _audio_cache[verse_key]
+
+    # Fetch audio specifically
+    try:
+        surah, ayah = verse_key.split(":")
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            r = await client.get(
+                f"https://api.alquran.cloud/v1/ayah/{surah}:{ayah}/ar.alafasy"
+            )
+            if r.status_code == 200:
+                audio = r.json().get("data", {}).get("audio", "")
+                if audio:
+                    _audio_cache[verse_key] = audio
+                    return audio
     except Exception:
         pass
     return ""
+
+async def get_surah_name(verse_key: str) -> str:
+    surah = verse_key.split(":")[0]
+    return SURAH_NAMES.get(surah, f"Surah {surah}")
+
+async def search_verses(query: str, size: int = 20) -> list:
+    try:
+        token = await get_content_token()
+        headers = get_content_headers(token)
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            r = await client.get(
+                f"{QF_API_BASE}/search/api/v1/search",
+                params={"q": query, "size": size, "language": "en"},
+                headers=headers
+            )
+            if r.status_code == 200:
+                results = r.json().get("search", {}).get("results", [])
+                return [{"verse_key": res["verse_key"], "translation": re.sub(r"<[^>]+>", "", res.get("text", ""))} for res in results]
+    except Exception:
+        pass
+    return []
