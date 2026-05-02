@@ -32,9 +32,9 @@ export default function VerseCard({ verse, situation, index }) {
   const t = T[lang];
   const [saved, setSaved] = useState(false);
   const [playing, setPlaying] = useState(false);
-  const [showNote, setShowNote] = useState(false);
+  
   const [note, setNote] = useState('');
-  const [noteSaved, setNoteSaved] = useState(false);
+  
   const [mood, setMood] = useState('reflective');
   const [hovered, setHovered] = useState(false);
   const [audio] = useState(() => verse.audio_url ? new Audio(verse.audio_url) : null);
