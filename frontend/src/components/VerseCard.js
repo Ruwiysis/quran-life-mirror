@@ -49,7 +49,13 @@ const DID_YOU_KNOW = {
 
 function stripArabic(text) {
   if (!text) return '';
-  return text.replace(/[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]+/g, '').replace(/\s+/g, ' ').trim();
+  return text
+    .replace(/[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]+/g, '')
+    .replace(/[\u00AB\u00BB\u2039\u203A]/g, '')
+    .replace(/\s*:\s*\.\.\./g, '.')
+    .replace(/\s*\(\s*\)/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 export default function VerseCard({ verse, situation, index }) {
