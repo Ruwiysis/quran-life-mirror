@@ -39,19 +39,20 @@ export default function VerseCard({ verse, situation, index }) {
   const [saved, setSaved] = useState(false);
   const [bookmarked, setBookmarked] = useState(false);
   const [playing, setPlaying] = useState(false);
-  
   const [note, setNote] = useState('');
-  
   const [mood, setMood] = useState('reflective');
   const [hovered, setHovered] = useState(false);
+  const [showTafsir, setShowTafsir] = useState(false);
   const [audio] = useState(() => verse.audio_url ? new Audio(verse.audio_url) : null);
   const fact = DID_YOU_KNOW[verse.verse_key];
+
+  const tafsirText = lang === 'ar' ? verse.tafsir_ar : verse.tafsir_en;
+  const tafsirLabel = lang === 'ar' ? '📖 تفسير ابن كثير' : '📖 Tafsir (Ibn Kathir)';
 
   const handleSave = async () => {
     if (saved) return;
     try {
       if (isLoggedIn && token) {
-        // Save to QF API
         await axios.post(
           '/api/user/reflection',
           {
@@ -59,13 +60,9 @@ export default function VerseCard({ verse, situation, index }) {
             reflection_text: verse.reflection + (note ? '\n\n' + note : ''),
             situation,
           },
-          {
-            headers: { 'Authorization': `Bearer ${token}` },
-          }
+          { headers: { 'Authorization': `Bearer ${token}` } }
         );
       }
-      
-      // Also save locally
       await axios.post((process.env.REACT_APP_API_URL || '') + '/api/journal', {
         situation, verse_key: verse.verse_key,
         arabic_text: verse.arabic_text, translation: verse.translation,
@@ -81,13 +78,10 @@ export default function VerseCard({ verse, situation, index }) {
     if (bookmarked) return;
     try {
       if (isLoggedIn && token) {
-        // Save bookmark to QF API
         await axios.post(
           '/api/user/bookmark',
           { verse_key: verse.verse_key },
-          {
-            headers: { 'Authorization': `Bearer ${token}` },
-          }
+          { headers: { 'Authorization': `Bearer ${token}` } }
         );
         setBookmarked(true);
       } else {
@@ -131,7 +125,7 @@ export default function VerseCard({ verse, situation, index }) {
         </span>
       </div>
 
-
+      {/* Arabic text */}
       <div style={{
         fontFamily:"'Amiri',serif",fontSize:'1.8rem',lineHeight:2.2,
         color:'rgba(245,239,230,0.95)',direction:'rtl',textAlign:'right',
@@ -150,6 +144,39 @@ export default function VerseCard({ verse, situation, index }) {
         <div style={{background:'rgba(201,168,76,0.06)',border:'1px solid rgba(201,168,76,0.15)',borderRadius:'10px',padding:'14px 18px',marginBottom:'16px'}}>
           <div style={{fontSize:'0.68rem',letterSpacing:'0.15em',textTransform:'uppercase',color:'rgba(201,168,76,0.6)',marginBottom:'6px'}}>{t.didYouKnow}</div>
           <p style={{fontSize:'0.88rem',color:'rgba(245,239,230,0.6)',lineHeight:1.7}}>{fact}</p>
+        </div>
+      )}
+
+      {/* Tafsir */}
+      {tafsirText && (
+        <div style={{marginBottom:'16px'}}>
+          <button
+            onClick={() => setShowTafsir(prev => !prev)}
+            style={{
+              background:'none', border:'none', cursor:'pointer',
+              fontSize:'0.75rem', color:'rgba(201,168,76,0.7)',
+              letterSpacing:'0.1em', textTransform:'uppercase',
+              padding:'0', fontFamily:"'DM Sans',sans-serif",
+              display:'flex', alignItems:'center', gap:'6px',
+            }}
+          >
+            <span style={{fontSize:'1rem'}}>{showTafsir ? '▾' : '▸'}</span>
+            {tafsirLabel}
+          </button>
+          {showTafsir && (
+            <div style={{
+              marginTop:'10px', background:'rgba(201,168,76,0.04)',
+              border:'1px solid rgba(201,168,76,0.12)', borderRadius:'10px',
+              padding:'16px 18px',
+            }}>
+              <p style={{
+                fontSize:'0.88rem', color:'rgba(245,239,230,0.65)',
+                lineHeight:1.9, margin:0,
+                fontFamily: lang === 'ar' ? "'Noto Sans Arabic',sans-serif" : "'DM Sans',sans-serif",
+                direction: lang === 'ar' ? 'rtl' : 'ltr',
+              }}>{tafsirText}</p>
+            </div>
+          )}
         </div>
       )}
 

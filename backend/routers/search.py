@@ -2,7 +2,7 @@
 from fastapi import APIRouter, HTTPException
 from models import SituationRequest, VerseResult
 from services.claude_service import generate_reflection, pick_verses
-from services.quran_service import get_verse, get_audio_url, get_surah_name
+from services.quran_service import get_verse, get_audio_url, get_surah_name, get_tafsir
 from typing import List
 import asyncio, random
 

@@ -220,3 +220,25 @@ async def search_verses(query: str, size: int = 20) -> list:
     except Exception as e:
         print(f"Error searching verses: {e}")
     return []
+async def get_tafsir(verse_key: str, lang: str = 'en') -> str:
+    # Ibn Kathir English = 169, Al-Muyassar Arabic = 381
+    resource_id = 381 if lang == 'ar' else 169
+    try:
+        token = await get_content_token()
+        headers = get_content_headers(token)
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            r = await client.get(
+                f"{QF_API_BASE}/content/api/v4/tafsirs/{resource_id}/by_ayah/{verse_key}",
+                headers=headers
+            )
+            if r.status_code == 200:
+                data = r.json().get('tafsir', {})
+                text = data.get('text', '')
+                # Remove HTML tags
+                import re
+                text = re.sub(r'<[^>]+>', '', text)
+                text = re.sub(r'\s+', ' ', text).strip()
+                return text[:600] + '...' if len(text) > 600 else text
+    except Exception as e:
+        print(f'Tafsir error for {verse_key}: {e}')
+    return ''
