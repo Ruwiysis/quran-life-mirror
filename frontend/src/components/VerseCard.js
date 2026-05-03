@@ -33,7 +33,7 @@ const DID_YOU_KNOW = {
 export default function VerseCard({ verse, situation, index }) {
   const { lang } = useContext(LangContext);
   const t = T[lang];
-  const isAr = lang === 'ar';
+  
   const { isLoggedIn, token } = useAuth();
   
   const [saved, setSaved] = useState(false);
