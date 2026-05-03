@@ -238,7 +238,7 @@ async def get_tafsir(verse_key: str, lang: str = 'en') -> str:
                 import re
                 text = re.sub(r'<[^>]+>', '', text)
                 text = re.sub(r'\s+', ' ', text).strip()
-                return text[:600] + '...' if len(text) > 600 else text
+                return text[:2000] + '...' if len(text) > 2000 else text
     except Exception as e:
         print(f'Tafsir error for {verse_key}: {e}')
     return ''
