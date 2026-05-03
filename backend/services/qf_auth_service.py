@@ -47,32 +47,23 @@ async def get_content_token() -> str:
         return _content_token_cache["token"]
 
 def get_auth_url() -> tuple:
-    code_verifier, code_challenge = generate_pkce_pair()
     state = secrets.token_hex(16)
-    _pkce_store[state] = code_verifier
-    
     params = {
         "response_type": "code",
         "client_id": QF_CLIENT_ID,
         "redirect_uri": f"{FRONTEND_URL}/callback",
         "scope": "openid offline_access user collection bookmark note streak goal",
         "state": state,
-        "code_challenge": code_challenge,
-        "code_challenge_method": "S256",
     }
     query = "&".join(f"{k}={v}" for k, v in params.items())
     return f"{QF_AUTH_ENDPOINT}/oauth2/auth?{query}", state
 
 async def exchange_code(code: str, state: str = None) -> Dict:
-    code_verifier = _pkce_store.pop(state, None) if state else None
-    
     data = {
         "grant_type": "authorization_code",
         "code": code,
         "redirect_uri": f"{FRONTEND_URL}/callback",
     }
-    if code_verifier:
-        data["code_verifier"] = code_verifier
     
     async with httpx.AsyncClient(timeout=15.0) as client:
         r = await client.post(
