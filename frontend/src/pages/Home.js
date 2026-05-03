@@ -22,7 +22,7 @@ export default function Home() {
     if (!situation.trim() || situation.length < 10) { setError(t.errorShort); return; }
     setError(''); setLoading(true); setResults([]);
     try {
-      const { data } = await axios.post('/api/search', { situation });
+      const { data } = await axios.post((process.env.REACT_APP_API_URL || '') + '/api/search', { situation });
       setResults(data);
     } catch (e) {
       setError(e?.response?.data?.detail || t.errorGeneral);
@@ -32,7 +32,7 @@ export default function Home() {
   const handleLogin = async () => {
     setAuthLoading(true);
     try {
-      const response = await axios.get('/api/auth/login');
+      const response = await axios.get((process.env.REACT_APP_API_URL || '') + '/api/auth/login');
       window.location.href = response.data.auth_url;
     } catch (e) {
       setError(t.loginError + (e?.response?.data?.detail || e.message));

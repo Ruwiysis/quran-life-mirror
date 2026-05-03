@@ -73,7 +73,7 @@ export function AuthProvider({ children }) {
      * authCode comes from QF OAuth2 callback
      */
     try {
-      const response = await fetch('/api/auth/callback?code=' + authCode);
+      const response = await fetch((process.env.REACT_APP_API_URL || '') + '/api/auth/callback?code=' + authCode);
       if (!response.ok) {
         throw new Error('Login failed');
       }
@@ -110,7 +110,7 @@ export function AuthProvider({ children }) {
     }
 
     try {
-      const response = await fetch('/api/auth/refresh', {
+      const response = await fetch((process.env.REACT_APP_API_URL || '') + '/api/auth/refresh', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

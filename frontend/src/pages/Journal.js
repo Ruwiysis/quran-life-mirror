@@ -260,22 +260,22 @@ export default function Journal() {
       try {
         if (isLoggedIn && token) {
           try {
-            const { data } = await axios.get('/api/user/journal', {
+            const { data } = await axios.get((process.env.REACT_APP_API_URL || '') + '/api/user/journal', {
               headers: { Authorization: `Bearer ${token}` },
             });
             try {
-              const streakData = await axios.get('/api/user/streaks', {
+              const streakData = await axios.get((process.env.REACT_APP_API_URL || '') + '/api/user/streaks', {
                 headers: { Authorization: `Bearer ${token}` },
               });
               setStreak(streakData.data);
             } catch { /* silent */ }
             setEntries(data);
           } catch {
-            const { data } = await axios.get('/api/journal');
+            const { data } = await axios.get((process.env.REACT_APP_API_URL || '') + '/api/journal');
             setEntries(data);
           }
         } else {
-          const { data } = await axios.get('/api/journal');
+          const { data } = await axios.get((process.env.REACT_APP_API_URL || '') + '/api/journal');
           setEntries(data);
         }
       } catch (e) {

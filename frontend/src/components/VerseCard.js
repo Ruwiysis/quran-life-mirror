@@ -66,7 +66,7 @@ export default function VerseCard({ verse, situation, index }) {
       }
       
       // Also save locally
-      await axios.post('/api/journal', {
+      await axios.post((process.env.REACT_APP_API_URL || '') + '/api/journal', {
         situation, verse_key: verse.verse_key,
         arabic_text: verse.arabic_text, translation: verse.translation,
         reflection: verse.reflection, personal_note: note, mood,
