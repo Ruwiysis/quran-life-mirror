@@ -175,7 +175,7 @@ export default function VerseCard({ verse, situation, index }) {
             <div style={{
               marginTop: '10px', background: 'rgba(201,168,76,0.04)',
               border: '1px solid rgba(201,168,76,0.12)', borderRadius: '10px',
-              padding: '16px 18px', maxHeight: '300px', overflowY: 'auto',
+              padding: '16px 18px', maxHeight: '500px', overflowY: 'auto',
             }}>
               <p style={{
                 fontSize: '0.88rem', color: 'rgba(245,239,230,0.65)',
