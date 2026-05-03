@@ -16,10 +16,7 @@ def _basic_auth_header() -> str:
     return f"Basic {credentials}"
 
 def get_content_headers(token: str) -> Dict:
-    return {
-        "x-auth-token": token,
-        "x-client-id": QF_CLIENT_ID
-    }
+    return {"x-auth-token": token, "x-client-id": QF_CLIENT_ID}
 
 async def get_content_token() -> str:
     current_time = time.time()
@@ -38,11 +35,12 @@ async def get_content_token() -> str:
         return _content_token_cache["token"]
 
 def get_auth_url() -> str:
+    scopes = "openid profile bookmarks collections streaks posts notes goals activity_days"
     return (
         f"{QF_AUTH_ENDPOINT}/oauth2/auth?"
         f"response_type=code&client_id={QF_CLIENT_ID}&"
         f"redirect_uri={FRONTEND_URL}/callback&"
-        f"scope=openid profile bookmarks collections streaks posts notes goals activity_days"
+        f"scope={scopes}"
     )
 
 async def exchange_code(code: str) -> Dict:
@@ -64,3 +62,18 @@ async def refresh_user_token(refresh_token: str) -> Dict:
         )
         r.raise_for_status()
         return r.json()
+
+async def get_user_info(access_token: str) -> Dict:
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        r = await client.get(
+            f"{QF_AUTH_ENDPOINT}/userinfo",
+            headers={"Authorization": f"Bearer {access_token}"}
+        )
+        r.raise_for_status()
+        return r.json()
+
+def get_user_api_headers(access_token: str) -> Dict:
+    return {
+        "Authorization": f"Bearer {access_token}",
+        "Content-Type": "application/json"
+    }

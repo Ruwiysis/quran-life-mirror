@@ -1,5 +1,6 @@
 from groq import Groq
 import os
+import re
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -7,63 +8,113 @@ client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 MODEL = "llama-3.1-8b-instant"
 
 def detect_language(text: str) -> str:
-    arabic_chars = sum(1 for c in text if "؀" <= c <= "ۿ")
+    arabic_chars = sum(1 for c in text if "\u0600" <= c <= "\u06FF")
     return "ar" if arabic_chars > len(text) * 0.2 else "en"
 
-async def extract_themes(situation: str) -> str:
-    r = client.chat.completions.create(
-        model=MODEL, max_tokens=60,
-        messages=[{"role":"user","content":f"Extract core spiritual themes from this situation as a 10-15 word Quran search query. Return ONLY the query.
+def extract_verse_keys(raw: str) -> list:
+    """
+    Robustly extract verse keys like 2:153 or 2/153 from any LLM response,
+    ignoring all surrounding Arabic/English text, labels, and punctuation.
+    """
+    pattern = r'\b(\d{1,3})[:/](\d{1,3})\b'
+    matches = re.findall(pattern, raw)
+    keys = []
+    for surah, ayah in matches:
+        s, a = int(surah), int(ayah)
+        if 1 <= s <= 114 and 1 <= a <= 300:
+            keys.append(f"{s}:{a}")
+    # Deduplicate while preserving order
+    seen = set()
+    result = []
+    for k in keys:
+        if k not in seen:
+            seen.add(k)
+            result.append(k)
+    return result
 
-Situation: {situation}"}]
+async def extract_themes(situation: str) -> str:
+    query = (
+        "Extract core spiritual themes from this situation as a 10-15 word "
+        "Quran search query. Return ONLY the query, nothing else.\n\nSituation: "
+        + situation
+    )
+    r = client.chat.completions.create(
+        model=MODEL,
+        max_tokens=60,
+        messages=[{"role": "user", "content": query}]
     )
     return r.choices[0].message.content.strip()
 
-async def generate_reflection(situation: str, verse_key: str, translation: str) -> str:
+async def generate_reflection(
+    situation: str,
+    verse_key: str,
+    translation: str,
+    tafsir_en: str = "",
+    tafsir_ar: str = ""
+) -> str:
     lang = detect_language(situation)
     if lang == "ar":
-        prompt = f"اكتب تأمل دافئ من 2-3 جمل يربط هذه الآية القرآنية بحالة الشخص. بضمير المخاطب، بأسلوب مشجع وليس وعظي. باللغة العربية فقط.
-
-الحالة: {situation}
-الآية ({verse_key}): {translation}
-
-التأمل:"
+        tafsir_context = ("السياق التفسيري: " + tafsir_ar + "\n\n") if tafsir_ar else ""
+        prompt = (
+            "أنت عالم إسلامي رحيم. "
+            + tafsir_context
+            + "اكتب تأملاً دافئاً من 3 جمل يربط هذه الآية القرآنية بحالة الشخص. "
+            "بضمير المخاطب، بأسلوب مشجع وليس وعظي. لا تتعارض مع التفسير. باللغة العربية فقط.\n\n"
+            "الحالة: " + situation + "\n"
+            "الآية (" + verse_key + "): " + translation + "\n\n"
+            "التأمل:"
+        )
     else:
-        prompt = f"Write a warm 2-3 sentence reflection connecting this Quran verse to the person situation. Second person, hopeful, not preachy.
-
-Situation: {situation}
-Verse ({verse_key}): {translation}
-
-Reflection:"
+        tafsir_context = ("Tafsir context: " + tafsir_en + "\n\n") if tafsir_en else ""
+        prompt = (
+            "You are a compassionate Islamic scholar. "
+            + tafsir_context
+            + "Using this tafsir as your scholarly foundation, write a warm personal "
+            "3-sentence reflection connecting this verse to the person's situation. "
+            "Second person. Hopeful, not preachy. Do not contradict the tafsir.\n\n"
+            "Situation: " + situation + "\n"
+            "Verse (" + verse_key + "): " + translation + "\n\n"
+            "Reflection:"
+        )
     r = client.chat.completions.create(
-        model=MODEL, max_tokens=150,
-        messages=[{"role":"user","content":prompt}]
+        model=MODEL,
+        max_tokens=200,
+        messages=[{"role": "user", "content": prompt}]
     )
     return r.choices[0].message.content.strip()
 
 async def pick_verses(situation: str, candidates: list, count: int = 6) -> list:
     if not candidates:
         return []
-    candidate_text = "
-".join([f"{v['verse_key']}: {v.get('translation','')[:80]}" for v in candidates])
-    lang = detect_language(situation)
-    if lang == "ar":
-        prompt = f"اختر {count} مفاتيح آيات الأكثر صلة بهذه الحالة. أعد مفاتيح الآيات مفصولة بفواصل فقط.
 
-الحالة: {situation}
+    candidate_text = "\n".join([
+        v["verse_key"] + ": " + v.get("translation", "")[:80]
+        for v in candidates
+    ])
 
-المرشحون:
-{candidate_text}"
-    else:
-        prompt = f"Pick the {count} most relevant verse keys for this situation. Return ONLY comma-separated verse keys ranked from most to least relevant.
-
-Situation: {situation}
-
-Candidates:
-{candidate_text}"
-    r = client.chat.completions.create(
-        model=MODEL, max_tokens=60,
-        messages=[{"role":"user","content":prompt}]
+    prompt = (
+        "You are a verse selector. Return ONLY a comma-separated list of verse keys.\n"
+        "Format example: 2:153,94:5,13:28,39:53,2:286,3:200\n"
+        "No labels. No explanation. No numbering. No Arabic text. No extra words. "
+        "Just the keys separated by commas.\n\n"
+        "Situation: " + situation + "\n\n"
+        "Pick the " + str(count) + " most relevant from these candidates:\n"
+        + candidate_text
+        + "\n\nReturn ONLY comma-separated verse keys:"
     )
-    keys = [k.strip() for k in r.choices[0].message.content.strip().split(",")]
+
+    r = client.chat.completions.create(
+        model=MODEL,
+        max_tokens=80,
+        messages=[{"role": "user", "content": prompt}]
+    )
+    raw = r.choices[0].message.content.strip()
+
+    # Robust parser handles any format: "2:153,94:5" or "2/153\n94/5" or garbage Arabic text
+    keys = extract_verse_keys(raw)
+
+    # Fallback: if nothing parsed, use first N candidates directly
+    if not keys:
+        keys = [v["verse_key"] for v in candidates[:count]]
+
     return keys[:count]

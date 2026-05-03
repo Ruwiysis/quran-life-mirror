@@ -1,379 +1,173 @@
-"""
-User router - requires authentication.
-All endpoints require Authorization: Bearer {access_token}
-Syncs data with Quran Foundation APIs.
-"""
-
 from fastapi import APIRouter, HTTPException, Header
 from pydantic import BaseModel
 from typing import Optional, List
-import httpx
-import os
+import httpx, os
 from dotenv import load_dotenv
+from services.qf_auth_service import get_user_api_headers
 
 load_dotenv()
-
 router = APIRouter()
-
 QF_API_BASE = os.getenv("QF_API_BASE")
-
 
 class BookmarkData(BaseModel):
     verse_key: str
 
-
 class BookmarkResponse(BaseModel):
     id: str
     verse_key: str
-    created_at: str
+    created_at: str = ""
 
-
-class ReflectionData(BaseModel):
+class NoteData(BaseModel):
     verse_key: str
-    reflection_text: str
+    note_text: str
     situation: Optional[str] = None
 
-
-class ReflectionResponse(BaseModel):
+class NoteResponse(BaseModel):
     id: str
     verse_key: str
-    reflection_text: str
-    created_at: str
-
+    note_text: str
+    created_at: str = ""
 
 class StreakInfo(BaseModel):
-    current_streak: int
-    longest_streak: int
-    total_days: int
-
+    current_streak: int = 0
+    longest_streak: int = 0
+    total_days: int = 0
 
 class JournalEntry(BaseModel):
     id: str
     verse_key: str
-    situation: str
-    reflection: str
-    created_at: str
-    source: str  # "local" or "qf"
+    situation: str = ""
+    note_text: str = ""
+    created_at: str = ""
+    entry_type: str = "bookmark"
 
-
-def get_token_from_header(authorization: Optional[str]) -> str:
-    """Extract bearer token from Authorization header."""
+def get_token(authorization: Optional[str]) -> str:
     if not authorization:
         raise HTTPException(status_code=401, detail="Missing authorization header")
-    
-    try:
-        token = authorization.replace("Bearer ", "")
-        return token
-    except Exception:
-        raise HTTPException(status_code=401, detail="Invalid authorization format")
+    return authorization.replace("Bearer ", "").strip()
 
-
-@router.post("/user/bookmark", response_model=BookmarkResponse)
-async def create_bookmark(
-    data: BookmarkData,
-    authorization: Optional[str] = Header(None)
-):
-    """
-    Create a bookmark in Quran Foundation.
-    """
-    token = get_token_from_header(authorization)
-    
+@router.post("/user/bookmark")
+async def create_bookmark(data: BookmarkData, authorization: Optional[str] = Header(None)):
+    token = get_token(authorization)
     try:
-        headers = {"Authorization": f"Bearer {token}"}
-        
         async with httpx.AsyncClient(timeout=10.0) as client:
-            response = await client.post(
+            r = await client.post(
                 f"{QF_API_BASE}/auth/api/v1/bookmarks",
-                headers=headers,
-                json={
-                    "verse_key": data.verse_key
-                }
+                headers=get_user_api_headers(token),
+                json={"verse_key": data.verse_key}
             )
-            
-            if response.status_code not in [200, 201]:
-                raise Exception(f"QF API error: {response.status_code}")
-            
-            result = response.json()
-            
-            return BookmarkResponse(
-                id=result.get("id", data.verse_key),
-                verse_key=result.get("verse_key", data.verse_key),
-                created_at=result.get("created_at", "")
-            )
-    
+            print(f"Bookmark response: {r.status_code} {r.text[:200]}")
+            if r.status_code in [200, 201]:
+                result = r.json()
+                return {"id": str(result.get("id", data.verse_key)), "verse_key": data.verse_key, "created_at": result.get("created_at", "")}
+            raise Exception(f"QF API error: {r.status_code} {r.text[:100]}")
     except Exception as e:
-        print(f"Error creating bookmark: {e}")
-        raise HTTPException(
-            status_code=500,
-            detail="Failed to save bookmark"
-        )
+        print(f"Bookmark error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
-
-@router.get("/user/bookmarks", response_model=List[BookmarkResponse])
-async def get_bookmarks(
-    authorization: Optional[str] = Header(None)
-):
-    """
-    Get user's bookmarks from Quran Foundation.
-    """
-    token = get_token_from_header(authorization)
-    
+@router.get("/user/bookmarks")
+async def get_bookmarks(authorization: Optional[str] = Header(None)):
+    token = get_token(authorization)
     try:
-        headers = {"Authorization": f"Bearer {token}"}
-        
         async with httpx.AsyncClient(timeout=10.0) as client:
-            response = await client.get(
-                f"{QF_API_BASE}/auth/api/v1/bookmarks",
-                headers=headers
-            )
-            
-            if response.status_code not in [200, 204]:
-                raise Exception(f"QF API error: {response.status_code}")
-            
-            if response.status_code == 204:
-                return []
-            
-            data = response.json()
-            bookmarks = data.get("bookmarks", data.get("data", []))
-            
-            return [
-                BookmarkResponse(
-                    id=b.get("id", b.get("verse_key")),
-                    verse_key=b.get("verse_key"),
-                    created_at=b.get("created_at", "")
-                )
-                for b in bookmarks
-            ]
-    
+            r = await client.get(f"{QF_API_BASE}/auth/api/v1/bookmarks", headers=get_user_api_headers(token))
+            print(f"Get bookmarks: {r.status_code} {r.text[:300]}")
+            if r.status_code == 200:
+                data = r.json()
+                bookmarks = data if isinstance(data, list) else data.get("bookmarks", data.get("data", []))
+                return [{"id": str(b.get("id", b.get("verse_key",""))), "verse_key": b.get("verse_key",""), "created_at": b.get("created_at","")} for b in bookmarks]
+            return []
     except Exception as e:
-        print(f"Error fetching bookmarks: {e}")
-        raise HTTPException(
-            status_code=500,
-            detail="Failed to fetch bookmarks"
-        )
+        print(f"Get bookmarks error: {e}")
+        return []
 
-
-@router.delete("/user/bookmark/{verse_key}")
-async def delete_bookmark(
-    verse_key: str,
-    authorization: Optional[str] = Header(None)
-):
-    """
-    Delete a bookmark from Quran Foundation.
-    """
-    token = get_token_from_header(authorization)
-    
+@router.delete("/user/bookmark/{bookmark_id}")
+async def delete_bookmark(bookmark_id: str, authorization: Optional[str] = Header(None)):
+    token = get_token(authorization)
     try:
-        headers = {"Authorization": f"Bearer {token}"}
-        
         async with httpx.AsyncClient(timeout=10.0) as client:
-            response = await client.delete(
-                f"{QF_API_BASE}/auth/api/v1/bookmarks/{verse_key}",
-                headers=headers
-            )
-            
-            if response.status_code not in [200, 204]:
-                raise Exception(f"QF API error: {response.status_code}")
-            
+            r = await client.delete(f"{QF_API_BASE}/auth/api/v1/bookmarks/{bookmark_id}", headers=get_user_api_headers(token))
+            print(f"Delete bookmark: {r.status_code}")
             return {"message": "Bookmark deleted"}
-    
     except Exception as e:
-        print(f"Error deleting bookmark: {e}")
-        raise HTTPException(
-            status_code=500,
-            detail="Failed to delete bookmark"
-        )
+        raise HTTPException(status_code=500, detail=str(e))
 
-
-@router.post("/user/reflection", response_model=ReflectionResponse)
-async def create_reflection(
-    data: ReflectionData,
-    authorization: Optional[str] = Header(None)
-):
-    """
-    Save a reflection/note for a verse to Quran Foundation.
-    """
-    token = get_token_from_header(authorization)
-    
+@router.post("/user/note")
+async def create_note(data: NoteData, authorization: Optional[str] = Header(None)):
+    token = get_token(authorization)
     try:
-        headers = {"Authorization": f"Bearer {token}"}
-        
         async with httpx.AsyncClient(timeout=10.0) as client:
-            response = await client.post(
-                f"{QF_API_BASE}/auth/api/v1/reflections",
-                headers=headers,
-                json={
-                    "verse_key": data.verse_key,
-                    "text": data.reflection_text
-                }
+            r = await client.post(
+                f"{QF_API_BASE}/auth/api/v1/notes",
+                headers=get_user_api_headers(token),
+                json={"verse_key": data.verse_key, "body": data.note_text, "ranges": [data.verse_key]}
             )
-            
-            if response.status_code not in [200, 201]:
-                raise Exception(f"QF API error: {response.status_code}")
-            
-            result = response.json()
-            
-            return ReflectionResponse(
-                id=result.get("id", data.verse_key),
-                verse_key=result.get("verse_key", data.verse_key),
-                reflection_text=result.get("text", data.reflection_text),
-                created_at=result.get("created_at", "")
-            )
-    
+            print(f"Note response: {r.status_code} {r.text[:200]}")
+            if r.status_code in [200, 201]:
+                result = r.json()
+                return {"id": str(result.get("id", data.verse_key)), "verse_key": data.verse_key, "note_text": data.note_text, "created_at": result.get("created_at","")}
+            raise Exception(f"QF API error: {r.status_code} {r.text[:100]}")
     except Exception as e:
-        print(f"Error creating reflection: {e}")
-        raise HTTPException(
-            status_code=500,
-            detail="Failed to save reflection"
-        )
+        print(f"Note error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
-
-@router.get("/user/reflections", response_model=List[ReflectionResponse])
-async def get_reflections(
-    authorization: Optional[str] = Header(None)
-):
-    """
-    Get user's reflections from Quran Foundation.
-    """
-    token = get_token_from_header(authorization)
-    
+@router.get("/user/notes")
+async def get_notes(authorization: Optional[str] = Header(None)):
+    token = get_token(authorization)
     try:
-        headers = {"Authorization": f"Bearer {token}"}
-        
         async with httpx.AsyncClient(timeout=10.0) as client:
-            response = await client.get(
-                f"{QF_API_BASE}/auth/api/v1/reflections",
-                headers=headers
-            )
-            
-            if response.status_code not in [200, 204]:
-                raise Exception(f"QF API error: {response.status_code}")
-            
-            if response.status_code == 204:
-                return []
-            
-            data = response.json()
-            reflections = data.get("reflections", data.get("data", []))
-            
-            return [
-                ReflectionResponse(
-                    id=r.get("id", r.get("verse_key")),
-                    verse_key=r.get("verse_key"),
-                    reflection_text=r.get("text", ""),
-                    created_at=r.get("created_at", "")
-                )
-                for r in reflections
-            ]
-    
+            r = await client.get(f"{QF_API_BASE}/auth/api/v1/notes", headers=get_user_api_headers(token))
+            print(f"Get notes: {r.status_code} {r.text[:300]}")
+            if r.status_code == 200:
+                data = r.json()
+                notes = data if isinstance(data, list) else data.get("notes", data.get("data", []))
+                return [{"id": str(n.get("id","")), "verse_key": n.get("verse_key",""), "note_text": n.get("body", n.get("text","")), "created_at": n.get("created_at","")} for n in notes]
+            return []
     except Exception as e:
-        print(f"Error fetching reflections: {e}")
-        raise HTTPException(
-            status_code=500,
-            detail="Failed to fetch reflections"
-        )
-
+        print(f"Get notes error: {e}")
+        return []
 
 @router.get("/user/streaks", response_model=StreakInfo)
-async def get_streaks(
-    authorization: Optional[str] = Header(None)
-):
-    """
-    Get user's streak information from Quran Foundation.
-    """
-    token = get_token_from_header(authorization)
-    
+async def get_streaks(authorization: Optional[str] = Header(None)):
+    token = get_token(authorization)
     try:
-        headers = {"Authorization": f"Bearer {token}"}
-        
         async with httpx.AsyncClient(timeout=10.0) as client:
-            response = await client.get(
-                f"{QF_API_BASE}/auth/api/v1/streaks",
-                headers=headers
-            )
-            
-            if response.status_code not in [200, 204]:
-                raise Exception(f"QF API error: {response.status_code}")
-            
-            if response.status_code == 204:
-                return StreakInfo(current_streak=0, longest_streak=0, total_days=0)
-            
-            data = response.json()
-            
-            return StreakInfo(
-                current_streak=data.get("current_streak", 0),
-                longest_streak=data.get("longest_streak", 0),
-                total_days=data.get("total_days", 0)
-            )
-    
-    except Exception as e:
-        print(f"Error fetching streaks: {e}")
-        # Return empty streak info instead of error
-        return StreakInfo(current_streak=0, longest_streak=0, total_days=0)
-
-
-@router.get("/user/journal", response_model=List[JournalEntry])
-async def get_combined_journal(
-    authorization: Optional[str] = Header(None)
-):
-    """
-    Get combined journal from QF APIs (bookmarks, reflections, activity).
-    Returns entries sorted by most recent first.
-    """
-    token = get_token_from_header(authorization)
-    
-    try:
-        headers = {"Authorization": f"Bearer {token}"}
-        entries = []
-        
-        async with httpx.AsyncClient(timeout=10.0) as client:
-            # Fetch bookmarks
-            try:
-                response = await client.get(
-                    f"{QF_API_BASE}/auth/api/v1/bookmarks",
-                    headers=headers
+            r = await client.get(f"{QF_API_BASE}/auth/api/v1/streaks", headers=get_user_api_headers(token))
+            print(f"Streaks: {r.status_code} {r.text[:300]}")
+            if r.status_code == 200:
+                data = r.json()
+                return StreakInfo(
+                    current_streak=data.get("current_streak", data.get("currentStreak", 0)),
+                    longest_streak=data.get("longest_streak", data.get("longestStreak", 0)),
+                    total_days=data.get("total_days", data.get("totalDays", 0))
                 )
-                if response.status_code == 200:
-                    bookmarks = response.json().get("bookmarks", [])
-                    for b in bookmarks:
-                        entries.append(JournalEntry(
-                            id=b.get("id", b.get("verse_key")),
-                            verse_key=b.get("verse_key"),
-                            situation="Bookmarked verse",
-                            reflection="",
-                            created_at=b.get("created_at", ""),
-                            source="qf"
-                        ))
-            except Exception as e:
-                print(f"Error fetching bookmarks for journal: {e}")
-            
-            # Fetch reflections
-            try:
-                response = await client.get(
-                    f"{QF_API_BASE}/auth/api/v1/reflections",
-                    headers=headers
-                )
-                if response.status_code == 200:
-                    reflections = response.json().get("reflections", [])
-                    for r in reflections:
-                        entries.append(JournalEntry(
-                            id=r.get("id", r.get("verse_key")),
-                            verse_key=r.get("verse_key"),
-                            situation="Personal reflection",
-                            reflection=r.get("text", ""),
-                            created_at=r.get("created_at", ""),
-                            source="qf"
-                        ))
-            except Exception as e:
-                print(f"Error fetching reflections for journal: {e}")
-        
-        # Sort by created_at (most recent first)
-        entries.sort(key=lambda x: x.created_at, reverse=True)
-        
-        return entries
-    
     except Exception as e:
-        print(f"Error fetching combined journal: {e}")
-        raise HTTPException(
-            status_code=500,
-            detail="Failed to fetch journal"
-        )
+        print(f"Streaks error: {e}")
+    return StreakInfo()
+
+@router.get("/user/journal")
+async def get_journal(authorization: Optional[str] = Header(None)):
+    token = get_token(authorization)
+    entries = []
+    headers = get_user_api_headers(token)
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        try:
+            r = await client.get(f"{QF_API_BASE}/auth/api/v1/bookmarks", headers=headers)
+            if r.status_code == 200:
+                data = r.json()
+                bookmarks = data if isinstance(data, list) else data.get("bookmarks", data.get("data", []))
+                for b in bookmarks:
+                    entries.append({"id": str(b.get("id","")), "verse_key": b.get("verse_key",""), "situation": "", "note_text": "", "created_at": b.get("created_at",""), "entry_type": "bookmark"})
+        except Exception as e:
+            print(f"Journal bookmarks error: {e}")
+        try:
+            r = await client.get(f"{QF_API_BASE}/auth/api/v1/notes", headers=headers)
+            if r.status_code == 200:
+                data = r.json()
+                notes = data if isinstance(data, list) else data.get("notes", data.get("data", []))
+                for n in notes:
+                    entries.append({"id": str(n.get("id","")), "verse_key": n.get("verse_key",""), "situation": "", "note_text": n.get("body", n.get("text","")), "created_at": n.get("created_at",""), "entry_type": "note"})
+        except Exception as e:
+            print(f"Journal notes error: {e}")
+    entries.sort(key=lambda x: x.get("created_at",""), reverse=True)
+    return entries

@@ -207,7 +207,13 @@ async def search_situation(request: SituationRequest):
                     return None
                 audio_url = await get_audio_url(verse_key)
                 surah_name = await get_surah_name(verse_key)
-                reflection = await generate_reflection(request.situation, verse_key, verse_data.get("translation",""))
+                reflection = await generate_reflection(
+                    request.situation, 
+                    verse_key, 
+                    verse_data.get("translation",""),
+                    tafsir_en=verse_data.get("tafsir_en", ""),
+                    tafsir_ar=verse_data.get("tafsir_ar", "")
+                )
                 return VerseResult(
                     verse_key=verse_key,
                     surah_name=surah_name,
@@ -215,7 +221,9 @@ async def search_situation(request: SituationRequest):
                     translation=verse_data.get("translation",""),
                     audio_url=audio_url or "",
                     reflection=reflection,
-                    relevance_score=relevance_scores.get(verse_key, 0.5)
+                    relevance_score=relevance_scores.get(verse_key, 0.5),
+                    tafsir_en=verse_data.get("tafsir_en"),
+                    tafsir_ar=verse_data.get("tafsir_ar")
                 )
             except Exception as e:
                 print(f"Error processing verse {verse_key}: {e}")

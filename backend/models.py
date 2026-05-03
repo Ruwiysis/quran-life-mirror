@@ -13,6 +13,8 @@ class VerseResult(BaseModel):
     audio_url: Optional[str] = None
     reflection: str
     relevance_score: float
+    tafsir_en: Optional[str] = None
+    tafsir_ar: Optional[str] = None
 
 class JournalEntryCreate(BaseModel):
     situation: str
