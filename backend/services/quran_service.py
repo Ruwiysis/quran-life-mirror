@@ -59,8 +59,6 @@ def _strip_html(text: str) -> str:
 
 
 def _truncate(text: str, max_chars: int = 450) -> str:
-    if len(text) > max_chars:
-        return text[:max_chars].rstrip() + "..."
     return text
 
 

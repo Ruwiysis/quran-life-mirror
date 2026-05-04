@@ -181,13 +181,19 @@ export default function VerseCard({ verse, situation, index }) {
             <div style={{
               marginTop: '10px', background: 'rgba(201,168,76,0.04)',
               border: '1px solid rgba(201,168,76,0.12)', borderRadius: '10px',
-              padding: '16px 18px', maxHeight: '500px', overflowY: 'auto',
+              padding: '18px 20px',
+              minHeight: '180px',
+              maxHeight: 'none',
+              height: 'auto',
+              overflowY: 'visible',
             }}>
               <p style={{
-                fontSize: '0.88rem', color: 'rgba(245,239,230,0.65)',
-                lineHeight: 1.9, margin: 0, fontFamily,
+                fontSize: '0.95rem', color: 'rgba(245,239,230,0.78)',
+                lineHeight: 1.95, margin: 0, fontFamily,
                 direction: isAr ? 'rtl' : 'ltr',
                 textAlign: isAr ? 'right' : 'left',
+                overflowWrap: 'anywhere',
+                whiteSpace: 'pre-wrap',
               }}>{tafsirText}</p>
             </div>
           )}
