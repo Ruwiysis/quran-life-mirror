@@ -6,11 +6,24 @@ from pydantic import BaseModel
 
 router = APIRouter(prefix="/local", tags=["local"])
 
-DB_PATH = "../journal.db"
+DB_PATH = "./journal.db"
 
 class LocalBookmark(BaseModel):
     verse_key: str
     created_at: str = ""
+
+def ensure_table():
+    conn = sqlite3.connect(DB_PATH)
+    conn.execute("""CREATE TABLE IF NOT EXISTS bookmarks (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        verse_key TEXT NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(verse_key)
+    )""")
+    conn.commit()
+    conn.close()
+
+ensure_table()
 
 @router.post("/bookmark")
 async def create_local_bookmark(bookmark: LocalBookmark):

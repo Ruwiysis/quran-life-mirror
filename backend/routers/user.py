@@ -49,6 +49,22 @@ def get_token(authorization: Optional[str]) -> str:
         raise HTTPException(status_code=401, detail="Missing authorization header")
     return authorization.replace("Bearer ", "").strip()
 
+def get_user_headers(token: str) -> dict:
+    return {
+        "Authorization": f"Bearer {token}",
+        "x-auth-token": token,
+        "x-client-id": os.getenv("QF_CLIENT_ID", ""),
+        "Content-Type": "application/json"
+    }
+
+def get_user_headers(token: str) -> dict:
+    return {
+        "Authorization": f"Bearer {token}",
+        "x-auth-token": token,
+        "x-client-id": os.getenv("QF_CLIENT_ID", ""),
+        "Content-Type": "application/json"
+    }
+
 async def _qf_call_with_retry(client, method: str, url: str, headers: dict, json=None, refresh_token: Optional[str] = None):
     r = await client.request(method, url, headers=headers, json=json)
     if r.status_code in [401, 403] and refresh_token and 'invalid_token' in r.text.lower():
