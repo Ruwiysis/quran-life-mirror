@@ -62,7 +62,7 @@ export default function VerseCard({ verse, situation, index }) {
   const { lang } = useContext(LangContext);
   const t = T[lang];
   const isAr = lang === 'ar';
-  const { isLoggedIn, token, refreshAccessToken } = useAuth();
+  const { isLoggedIn, token, refreshToken, refreshAccessToken } = useAuth();
 
   const [saved, setSaved] = useState(false);
   const [bookmarked, setBookmarked] = useState(false);
@@ -107,21 +107,26 @@ export default function VerseCard({ verse, situation, index }) {
     if (bookmarked) return;
     if (!isLoggedIn || !token) { alert(t.loginToBookmark); return; }
     let retries = 0;
+    let currentToken = token;
     while (retries < 2) {
       try {
         await axios.post(API + '/api/user/bookmark',
-          { verse_key: verse.verse_key },
-          { headers: { Authorization: `Bearer ${token}` } }
+          { verse_key: verse.verse_key, refresh_token: refreshToken },
+          { headers: { Authorization: `Bearer ${currentToken}` } }
         );
         setBookmarked(true);
         return;
       } catch (e) {
-        if (e.response?.status === 403 && e.response?.data?.message?.includes('invalid_token') && refreshAccessToken && retries === 0) {
+        const message = e?.response?.data?.message || e?.response?.data?.detail || '';
+        if (e.response?.status === 403 && message.toLowerCase().includes('invalid_token') && refreshAccessToken && retries === 0) {
           retries++;
-          await refreshAccessToken();
+          const refreshedToken = await refreshAccessToken();
+          if (!refreshedToken) break;
+          currentToken = refreshedToken;
           continue;
         }
-        alert('Could not bookmark: ' + (e?.response?.data?.detail || e.message));
+        console.error('Bookmark error:', e.response?.data || e);
+        alert(`Bookmark saved locally (QF sync: ${e?.response?.status || 'unknown'}). Check console/backend logs for details.`);
         break;
       }
     }

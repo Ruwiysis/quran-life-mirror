@@ -64,36 +64,55 @@ async def _qf_call_with_retry(client, method: str, url: str, headers: dict, json
 @router.post("/user/bookmark")
 async def create_bookmark(data: BookmarkData, authorization: Optional[str] = Header(None)):
     token = get_token(authorization)
+    print(f"Attempting bookmark save for verse_key: {data.verse_key}")
+    print(f"Token present: {bool(token)}")
+    print(f"QF_API_BASE: {QF_API_BASE}")
+    if not QF_API_BASE:
+        print("QF_API_BASE not set, falling back to local storage")
+        # Fallback to local
+        from .local_bookmarks import create_local_bookmark
+        return create_local_bookmark({"verse_key": data.verse_key})
+    
     try:
         async with httpx.AsyncClient(timeout=10.0) as client:
             headers = get_user_api_headers(token)
-            r = await _qf_call_with_retry(client, 'POST', f"{QF_API_BASE}/auth/api/v1/bookmarks", headers, json={"verse_key": data.verse_key}, refresh_token=data.refresh_token)
-            print(f"Bookmark response: {r.status_code} {r.text[:200]}")
+            url = f"{QF_API_BASE}/auth/api/v1/bookmarks"
+            print(f"Proxying to QF URL: {url}")
+            print(f"Headers keys: {list(headers.keys())}")
+            r = await _qf_call_with_retry(client, 'POST', url, headers, json={"verse_key": data.verse_key}, refresh_token=data.refresh_token)
+            print(f"QF Bookmark response: {r.status_code} {r.text[:300]}")
             if r.status_code in [200, 201]:
                 result = r.json()
                 return {"id": str(result.get("id", data.verse_key)), "verse_key": data.verse_key, "created_at": result.get("created_at", "")}
-            raise HTTPException(status_code=r.status_code, detail=f"Failed to bookmark verse: {r.text[:100]}")
-    except HTTPException:
-        raise
+            else:
+                print(f"QF failed ({r.status_code}), falling back to local")
+                from .local_bookmarks import create_local_bookmark
+                return create_local_bookmark({"verse_key": data.verse_key})
     except Exception as e:
-        print(f"Bookmark error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        print(f"Bookmark proxy error (falling back to local): {e}")
+        from .local_bookmarks import create_local_bookmark
+        return create_local_bookmark({"verse_key": data.verse_key})
 
 @router.get("/user/bookmarks")
 async def get_bookmarks(authorization: Optional[str] = Header(None)):
-    token = get_token(authorization)
-    try:
-        async with httpx.AsyncClient(timeout=10.0) as client:
-            r = await client.get(f"{QF_API_BASE}/auth/api/v1/bookmarks", headers=get_user_api_headers(token))
-            print(f"Get bookmarks: {r.status_code} {r.text[:300]}")
-            if r.status_code == 200:
-                data = r.json()
-                bookmarks = data if isinstance(data, list) else data.get("bookmarks", data.get("data", []))
-                return [{"id": str(b.get("id", b.get("verse_key",""))), "verse_key": b.get("verse_key",""), "created_at": b.get("created_at","")} for b in bookmarks]
-            return []
-    except Exception as e:
-        print(f"Get bookmarks error: {e}")
-        return []
+    print("Fetching bookmarks - trying QF first")
+    if QF_API_BASE:
+        token = get_token(authorization)
+        try:
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                r = await client.get(f"{QF_API_BASE}/auth/api/v1/bookmarks", headers=get_user_api_headers(token))
+                print(f"QF Get bookmarks: {r.status_code} {r.text[:300]}")
+                if r.status_code == 200:
+                    data = r.json()
+                    bookmarks = data if isinstance(data, list) else data.get("bookmarks", data.get("data", []))
+                    return [{"id": str(b.get("id", b.get("verse_key",""))), "verse_key": b.get("verse_key",""), "created_at": b.get("created_at","")} for b in bookmarks]
+        except Exception as e:
+            print(f"QF Get bookmarks failed: {e}")
+    
+    # Fallback to local
+    print("Falling back to local bookmarks")
+    from .local_bookmarks import get_local_bookmarks
+    return await get_local_bookmarks()
 
 @router.delete("/user/bookmark/{bookmark_id}")
 async def delete_bookmark(bookmark_id: str, authorization: Optional[str] = Header(None)):

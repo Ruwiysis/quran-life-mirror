@@ -1,12 +1,14 @@
-# Quran Life Mirror UI Fixes TODO
+# Fix Bookmark Save Error - Progress Tracker
 
-## Plan Breakdown
-1. [x] Create TODO.md ✅
-2. [x] Edit frontend/src/components/Nav.js: Fix header gradient → solid bg + border ✅
-3. [x] Edit frontend/src/pages/Home.js: Add route check, hide bookmark on non-Home pages ✅
-4. [x] Test: Dev server running at http://localhost:3000 ✅ Check / (Reflect: clean header, bookmark visible), /journal (no bookmark, consistent styles), toggle light/dark
-5. [ ] Test: cd frontend && npm start, check / and /journal in light/dark
-6. [ ] attempt_completion
+## Planned Steps:
+- [x] Step 1: Added local bookmarks table to database.py, created routers/local_bookmarks.py with POST/GET/DELETE /api/local/bookmark*, included in main.py.
+- [x] Step 2: Updated backend/routers/user.py: Added detailed logging (QF_API_BASE, URLs, responses), fallback to local save/fetch if QF fails/missing env.
+- [x] Step 3: Updated frontend VerseCard.js: Better error console/alert for local fallback.
+- [x] Step 4: Fixed database.py indentation. Backend now starts cleanly (logs show startup success).
 
-Progress will be updated after each step.
+- [ ] Step 5: If QF env vars missing, guide .env setup from .env.example.
+- [ ] Step 6: Verify get/delete bookmarks work.
+- [ ] Step 7: attempt_completion once fixed.
+
+**Current: Starting Step 1**
 

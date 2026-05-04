@@ -29,5 +29,14 @@ def init_db():
     try:
         db.execute("ALTER TABLE journal ADD COLUMN mood TEXT DEFAULT 'reflective'")
     except: pass
+    db.execute("""
+        CREATE TABLE IF NOT EXISTS bookmarks (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            verse_key TEXT NOT NULL,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(verse_key)
+        )
+    """)
     db.commit()
     db.close()
+
