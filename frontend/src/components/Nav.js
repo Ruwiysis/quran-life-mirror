@@ -11,6 +11,11 @@ export default function Nav() {
   const t = T[lang].nav;
   const isAr = lang === 'ar';
 
+  const navLinks = [['/', t.reflect], ['/journal', t.journal]];
+  if (pathname !== '/') {
+    navLinks.push(['/bookmarks', '🗂️ Bookmarks']);
+  }
+
   return (
     <nav style={{
       position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100,
@@ -32,7 +37,7 @@ export default function Nav() {
       </Link>
 
       <div style={{ display: 'flex', gap: '24px', alignItems: 'center' }}>
-        {[['/', t.reflect], ['/journal', t.journal], ['/bookmarks', '🗂️ Bookmarks']].map(([path, label]) => (
+        {navLinks.map(([path, label]) => (
           <Link key={path} to={path} style={{
             fontFamily: "'DM Sans',sans-serif",
             fontSize: '0.85rem', fontWeight: 400,
