@@ -60,8 +60,8 @@ export default function Bookmarks() {
 
   if (!isLoggedIn) {
     return (
-      <main style={{ minHeight: '100vh', padding: '110px 24px 80px', maxWidth: '780px', margin: '0 auto', textAlign: 'center', color: 'rgba(245,239,230,0.6)', fontFamily }}>
-        <h1 style={{ fontSize: '2rem', color: '#f5efe6', marginBottom: '20px' }}>Bookmarks</h1>
+      <main style={{ minHeight: '100vh', padding: '110px 24px 80px', maxWidth: '780px', margin: '0 auto', textAlign: 'center', color: 'var(--text-secondary)', fontFamily }}>
+        <h1 style={{ fontSize: '2rem', color: 'var(--text)', marginBottom: '20px' }}>Bookmarks</h1>
         <p>Please log in to see your bookmarks from Quran.com.</p>
       </main>
     );
@@ -70,28 +70,28 @@ export default function Bookmarks() {
   return (
     <main style={{ minHeight: '100vh', padding: '110px 24px 80px', maxWidth: '780px', margin: '0 auto', direction: isAr ? 'rtl' : 'ltr', fontFamily }}>
       <div style={{ marginBottom: '40px' }}>
-        <span style={{ fontSize: '0.72rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: 'rgba(201,168,76,0.7)', marginBottom: '12px', display: 'inline-block' }}>
+        <span style={{ fontSize: '0.72rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--gold)', marginBottom: '12px', display: 'inline-block' }}>
           🗂️ Bookmarks
         </span>
-        <h1 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 'clamp(2rem,5vw,3rem)', fontWeight: 300, color: '#f5efe6', lineHeight: 1.2, marginBottom: '10px' }}>
+        <h1 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 'clamp(2rem,5vw,3rem)', fontWeight: 300, color: 'var(--text)', lineHeight: 1.2, marginBottom: '10px' }}>
           Your Quran Library
         </h1>
-        <p style={{ fontSize: '1rem', color: 'rgba(245,239,230,0.8)', maxWidth: '600px' }}>
+        <p style={{ fontSize: '1rem', color: 'var(--text)', maxWidth: '600px' }}>
           Quick reference verses you've bookmarked. Synced with your Quran.com account. Organized by surah.
         </p>
       </div>
 
-      {loading && <div style={{ textAlign: 'center', padding: '80px 0', color: 'rgba(245,239,230,0.5)' }}>Loading your bookmarks...</div>}
-      {error && <div style={{ textAlign: 'center', padding: '80px 0', color: 'rgba(245,239,230,0.5)' }}>{error}</div>}
+      {loading && <div style={{ textAlign: 'center', padding: '80px 0', color: 'var(--text-secondary)' }}>Loading your bookmarks...</div>}
+      {error && <div style={{ textAlign: 'center', padding: '80px 0', color: 'var(--text-secondary)' }}>{error}</div>}
       {!loading && !error && Object.keys(groupedVerses).length === 0 && (
-        <div style={{ textAlign: 'center', padding: '80px 0', color: 'rgba(245,239,230,0.5)', fontStyle: 'italic' }}>
+        <div style={{ textAlign: 'center', padding: '80px 0', color: 'var(--text-secondary)', fontStyle: 'italic' }}>
           No bookmarks yet. Start bookmarking verses you want to return to!
         </div>
       )}
 
       {Object.entries(groupedVerses).map(([surah, surahVerses]) => (
         <div key={surah} style={{ marginBottom: '48px' }}>
-          <div style={{ textAlign: 'center', marginBottom: '28px', fontSize: '0.85rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: 'rgba(201,168,76,0.6)' }}>
+          <div style={{ textAlign: 'center', marginBottom: '28px', fontSize: '0.85rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--gold)' }}>
             ── {surah} ──
           </div>
           {surahVerses.map((verse, i) => (
