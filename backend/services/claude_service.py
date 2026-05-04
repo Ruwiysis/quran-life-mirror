@@ -118,3 +118,50 @@ async def pick_verses(situation: str, candidates: list, count: int = 6) -> list:
         keys = [v["verse_key"] for v in candidates[:count]]
 
     return keys[:count]
+async def generate_all_reflections(situation: str, verses: list) -> list:
+    """Generate all reflections in ONE API call instead of 6 separate ones."""
+    verses_text = ""
+    for i, v in enumerate(verses):
+        verses_text += f"{i+1}. Verse {v['verse_key']}: {v['translation'][:120]}\n"
+    
+    lang = detect_language(situation)
+    if lang == "ar":
+        prompt = f"""اكتب {len(verses)} تأملات قصيرة (2-3 جمل لكل واحدة) تربط هذه الآيات بحالة الشخص. بضمير المخاطب، مشجع وليس وعظي. باللغة العربية.
+
+الحالة: {situation}
+
+الآيات:
+{verses_text}
+
+اكتب الإجابة بهذا الشكل بالضبط:
+1: [التأمل الأول]
+2: [التأمل الثاني]
+وهكذا..."""
+    else:
+        prompt = f"""Write {len(verses)} short reflections (2-3 sentences each) connecting these Quran verses to the person's situation. Second person, hopeful, not preachy.
+
+Situation: {situation}
+
+Verses:
+{verses_text}
+
+Reply in this exact format:
+1: [reflection for verse 1]
+2: [reflection for verse 2]
+etc."""
+
+    r = client.chat.completions.create(
+        model=MODEL, max_tokens=800,
+        messages=[{"role": "user", "content": prompt}]
+    )
+    
+    raw = r.choices[0].message.content.strip()
+    reflections = []
+    for i in range(1, len(verses) + 1):
+        import re
+        match = re.search(rf"{i}:\s*(.+?)(?=\n{i+1}:|$)", raw, re.DOTALL)
+        if match:
+            reflections.append(match.group(1).strip())
+        else:
+            reflections.append("This verse speaks directly to your heart in this moment.")
+    return reflections
