@@ -36,12 +36,24 @@ async def oauth_callback(
         raise HTTPException(status_code=400, detail="Missing authorization code")
     try:
         token_response = await qf_auth_service.exchange_code(code, state)
+        access_token = token_response.get("access_token")
+        
+        # Fetch actual user info using the access token
+        try:
+            user_info = await qf_auth_service.get_user_info(access_token)
+            user_id = user_info.get("sub")
+            email = user_info.get("email")
+        except Exception as e:
+            print(f"Failed to get user info: {e}")
+            user_id = token_response.get("sub")
+            email = token_response.get("email")
+        
         return UserToken(
-            access_token=token_response.get("access_token"),
+            access_token=access_token,
             refresh_token=token_response.get("refresh_token"),
             token_type=token_response.get("token_type", "Bearer"),
-            user_id=token_response.get("sub"),
-            email=token_response.get("email")
+            user_id=user_id,
+            email=email
         )
     except Exception as e:
         print(f"OAuth callback error: {e}")

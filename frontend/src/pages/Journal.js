@@ -257,6 +257,7 @@ export default function Journal() {
 
   useEffect(() => {
     const fetchData = async () => {
+      setLoading(true);
       try {
         let allEntries = [];
         
@@ -271,8 +272,10 @@ export default function Journal() {
         // If logged in, also fetch QF entries (bookmarks/notes)
         if (isLoggedIn && token) {
           try {
+            console.log('Fetching QF entries for user:', token.substring(0, 20) + '...');
             const { data: qfData } = await axios.get((process.env.REACT_APP_API_URL || '') + '/api/user/journal', {
               headers: { Authorization: `Bearer ${token}` },
+              params: { t: Date.now() }, // Cache-busting param
             });
             // Mark QF entries so we know they're from QF
             const qfEntries = qfData.map(e => ({ ...e, isFromQF: true }));
