@@ -135,12 +135,12 @@ export default function VerseCard({ verse, situation, index }) {
 
   return (
     <div className="fade-up" style={{
-      background: 'linear-gradient(135deg,rgba(30,38,64,0.85) 0%,rgba(20,25,41,0.9) 100%)',
-      border: `1px solid ${hovered ? 'rgba(201,168,76,0.45)' : 'rgba(201,168,76,0.2)'}`,
+      background: 'var(--ink-soft)',
+      border: `1px solid ${hovered ? 'var(--gold)' : 'var(--border)'}`,
       borderRadius: '18px', padding: '36px', marginBottom: '20px',
       backdropFilter: 'blur(12px)', transition: 'all 0.3s',
       position: 'relative', overflow: 'hidden',
-      boxShadow: hovered ? '0 8px 40px rgba(201,168,76,0.1)' : 'none',
+      boxShadow: hovered ? 'var(--glow)' : 'none',
       animationDelay: `${index * 0.1}s`,
       direction: isAr ? 'rtl' : 'ltr',
       fontFamily,
@@ -149,32 +149,32 @@ export default function VerseCard({ verse, situation, index }) {
       <span style={{ position: 'absolute', top: 16, right: isAr ? 'auto' : 20, left: isAr ? 20 : 'auto', fontSize: '1.4rem', opacity: 0.1 }}>✦</span>
 
       <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap' }}>
-        <span style={{ fontSize: '0.72rem', fontWeight: 500, color: '#c9a84c', letterSpacing: '0.12em', textTransform: 'uppercase', background: 'rgba(201,168,76,0.12)', borderRadius: '20px', padding: '4px 12px' }}>
+        <span style={{ fontSize: '0.72rem', fontWeight: 500, color: 'var(--gold)', letterSpacing: '0.12em', textTransform: 'uppercase', background: 'var(--gold-dim)', borderRadius: '20px', padding: '4px 12px' }}>
           {verse.surah_name} · {verse.verse_key}
         </span>
-        <span style={{ fontSize: '0.72rem', color: 'rgba(245,239,230,0.3)' }}>
+        <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>
           {Math.round(verse.relevance_score * 100)}% match
         </span>
       </div>
 
       <div style={{
         fontFamily: "'Amiri',serif", fontSize: '1.8rem', lineHeight: 2.2,
-        color: 'rgba(245,239,230,0.95)', direction: 'rtl', textAlign: 'right',
+        color: 'var(--text)', direction: 'rtl', textAlign: 'right',
         marginBottom: '20px', padding: '18px 22px',
-        background: 'rgba(201,168,76,0.06)', borderRadius: '10px',
-        borderRight: '3px solid rgba(201,168,76,0.4)',
+        background: 'var(--gold-dim)', borderRadius: '10px',
+        borderRight: `3px solid var(--gold)`,
       }}>{verse.arabic_text}</div>
 
       {!isAr && (
-        <p style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: '1.15rem', fontStyle: 'italic', color: 'rgba(245,239,230,0.8)', lineHeight: 1.8, marginBottom: '16px' }}>
+        <p style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: '1.15rem', fontStyle: 'italic', color: 'var(--text)', lineHeight: 1.8, marginBottom: '16px' }}>
           "{verse.translation}"
         </p>
       )}
 
       {fact && (
-        <div style={{ background: 'rgba(201,168,76,0.06)', border: '1px solid rgba(201,168,76,0.15)', borderRadius: '10px', padding: '14px 18px', marginBottom: '16px' }}>
-          <div style={{ fontSize: '0.68rem', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'rgba(201,168,76,0.6)', marginBottom: '6px' }}>{t.didYouKnow}</div>
-          <p style={{ fontSize: '0.88rem', color: 'rgba(245,239,230,0.6)', lineHeight: 1.7, fontFamily, margin: 0 }}>{fact}</p>
+        <div style={{ background: 'var(--gold-dim)', border: `1px solid var(--border)`, borderRadius: '10px', padding: '14px 18px', marginBottom: '16px' }}>
+          <div style={{ fontSize: '0.68rem', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--gold)', marginBottom: '6px' }}>{t.didYouKnow}</div>
+          <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', lineHeight: 1.7, fontFamily, margin: 0 }}>{fact}</p>
         </div>
       )}
 
@@ -182,7 +182,7 @@ export default function VerseCard({ verse, situation, index }) {
         <div style={{ marginBottom: '16px' }}>
           <button onClick={() => setShowTafsir(p => !p)} style={{
             background: 'none', border: 'none', cursor: 'pointer',
-            fontSize: '0.75rem', color: 'rgba(201,168,76,0.7)',
+            fontSize: '0.75rem', color: 'var(--gold)',
             letterSpacing: '0.1em', textTransform: 'uppercase',
             padding: 0, fontFamily, display: 'flex', alignItems: 'center', gap: '6px',
           }}>
@@ -191,8 +191,8 @@ export default function VerseCard({ verse, situation, index }) {
           </button>
           {showTafsir && (
             <div style={{
-              marginTop: '10px', background: 'rgba(201,168,76,0.04)',
-              border: '1px solid rgba(201,168,76,0.12)', borderRadius: '10px',
+              marginTop: '10px', background: 'var(--gold-dim)',
+              border: `1px solid var(--border)`, borderRadius: '10px',
               padding: '18px 20px',
               minHeight: '180px',
               maxHeight: 'none',
@@ -200,7 +200,7 @@ export default function VerseCard({ verse, situation, index }) {
               overflowY: 'visible',
             }}>
               <p style={{
-                fontSize: '0.95rem', color: 'rgba(245,239,230,0.78)',
+                fontSize: '0.95rem', color: 'var(--text)',
                 lineHeight: 1.95, margin: 0, fontFamily,
                 direction: isAr ? 'rtl' : 'ltr',
                 textAlign: isAr ? 'right' : 'left',
@@ -212,20 +212,20 @@ export default function VerseCard({ verse, situation, index }) {
         </div>
       )}
 
-      <div style={{ height: '1px', background: 'linear-gradient(90deg,transparent,rgba(201,168,76,0.3),transparent)', margin: '16px 0' }} />
+      <div style={{ height: '1px', background: `linear-gradient(90deg,transparent,var(--border),transparent)`, margin: '16px 0' }} />
 
-      <div style={{ fontSize: '0.72rem', fontWeight: 500, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(201,168,76,0.6)', marginBottom: '10px' }}>{t.reflection}</div>
-      <p style={{ fontSize: '0.95rem', color: 'rgba(245,239,230,0.7)', lineHeight: 1.8, marginBottom: '20px', fontFamily }}>{verse.reflection}</p>
+      <div style={{ fontSize: '0.72rem', fontWeight: 500, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--gold)', marginBottom: '10px' }}>{t.reflection}</div>
+      <p style={{ fontSize: '0.95rem', color: 'var(--text-secondary)', lineHeight: 1.8, marginBottom: '20px', fontFamily }}>{verse.reflection}</p>
 
       {!saved && (
         <div style={{ marginBottom: '16px' }}>
-          <div style={{ fontSize: '0.7rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(245,239,230,0.3)', marginBottom: '8px', fontFamily }}>{t.howFeel}</div>
+          <div style={{ fontSize: '0.7rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: '8px', fontFamily }}>{t.howFeel}</div>
           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
             {(isAr ? MOODS_AR : MOODS).map((m, i) => (
               <button key={m} onClick={() => setMood(MOODS[i])} style={{
                 fontSize: '0.75rem', padding: '4px 12px', borderRadius: '20px', border: 'none', cursor: 'pointer',
-                background: mood === MOODS[i] ? 'rgba(201,168,76,0.25)' : 'rgba(245,239,230,0.06)',
-                color: mood === MOODS[i] ? '#c9a84c' : 'rgba(245,239,230,0.45)',
+                background: mood === MOODS[i] ? 'var(--gold-dim)' : `rgba(var(--text-rgb), 0.06)`,
+                color: mood === MOODS[i] ? 'var(--gold)' : 'var(--text-secondary)',
                 fontFamily, transition: 'all 0.2s',
               }}>{m}</button>
             ))}
@@ -236,9 +236,9 @@ export default function VerseCard({ verse, situation, index }) {
       {!saved && (
         <div style={{ marginBottom: '16px' }}>
           <textarea placeholder={t.addNote} value={note} onChange={e => setNote(e.target.value)} style={{
-            width: '100%', minHeight: '70px', background: 'rgba(10,15,30,0.5)',
-            border: '1px solid rgba(201,168,76,0.15)', borderRadius: '10px',
-            padding: '12px 16px', color: '#f5efe6', fontSize: '0.88rem',
+            width: '100%', minHeight: '70px', background: `rgba(var(--text-rgb), 0.05)`,
+            border: `1px solid var(--border)`, borderRadius: '10px',
+            padding: '12px 16px', color: 'var(--text)', fontSize: '0.88rem',
             fontFamily, resize: 'vertical', outline: 'none',
             direction: isAr ? 'rtl' : 'ltr',
           }} />
@@ -249,9 +249,9 @@ export default function VerseCard({ verse, situation, index }) {
         <button onClick={handleSave} style={{
           fontSize: '0.8rem', fontWeight: 500, padding: '9px 20px', borderRadius: '20px',
           cursor: saved ? 'default' : 'pointer', border: 'none', fontFamily, transition: 'all 0.2s',
-          background: saved ? 'rgba(201,168,76,0.25)' : 'rgba(201,168,76,0.15)',
-          color: saved ? '#e8c97a' : '#c9a84c',
-          outline: saved ? 'none' : '1px solid rgba(201,168,76,0.3)',
+          background: saved ? 'var(--gold-dim)' : `rgba(var(--text-rgb), 0.05)`,
+          color: saved ? 'var(--gold-light)' : 'var(--gold)',
+          outline: saved ? 'none' : `1px solid var(--border)`,
         }}>{saved ? t.saved : t.saveJournal}</button>
 
         {isLoggedIn && (
@@ -267,8 +267,8 @@ export default function VerseCard({ verse, situation, index }) {
         {verse.audio_url && (
           <button onClick={handleAudio} style={{
             fontSize: '0.8rem', padding: '9px 20px', borderRadius: '20px',
-            background: 'rgba(245,239,230,0.06)', color: 'rgba(245,239,230,0.6)',
-            border: '1px solid rgba(245,239,230,0.12)', cursor: 'pointer',
+            background: `rgba(var(--text-rgb), 0.06)`, color: 'var(--text-secondary)',
+            border: `1px solid var(--border)`, cursor: 'pointer',
             fontFamily, transition: 'all 0.2s',
           }}>{playing ? t.stop : t.listen}</button>
         )}

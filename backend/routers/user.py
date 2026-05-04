@@ -64,14 +64,20 @@ async def _qf_call_with_retry(client, method: str, url: str, headers: dict, json
 @router.post("/user/bookmark")
 async def create_bookmark(data: BookmarkData, authorization: Optional[str] = Header(None)):
     token = get_token(authorization)
-    async with httpx.AsyncClient(timeout=10.0) as client:
-        headers = get_user_api_headers(token)
-        r = await _qf_call_with_retry(client, 'POST', f"{QF_API_BASE}/auth/api/v1/bookmarks", headers, json={"verse_key": data.verse_key}, refresh_token=data.refresh_token)
-        print(f"Bookmark response: {r.status_code} {r.text[:200]}")
-        if r.status_code in [200, 201]:
-            result = r.json()
-            return {"id": str(result.get("id", data.verse_key)), "verse_key": data.verse_key, "created_at": result.get("created_at", "")}
-        raise Exception(f"QF API error: {r.status_code} {r.text[:100]}")
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            headers = get_user_api_headers(token)
+            r = await _qf_call_with_retry(client, 'POST', f"{QF_API_BASE}/auth/api/v1/bookmarks", headers, json={"verse_key": data.verse_key}, refresh_token=data.refresh_token)
+            print(f"Bookmark response: {r.status_code} {r.text[:200]}")
+            if r.status_code in [200, 201]:
+                result = r.json()
+                return {"id": str(result.get("id", data.verse_key)), "verse_key": data.verse_key, "created_at": result.get("created_at", "")}
+            raise HTTPException(status_code=r.status_code, detail=f"Failed to bookmark verse: {r.text[:100]}")
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Bookmark error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/user/bookmarks")
 async def get_bookmarks(authorization: Optional[str] = Header(None)):
