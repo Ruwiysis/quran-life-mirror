@@ -155,9 +155,11 @@ export default function VerseCard({ verse, situation, index }) {
         borderRight: '3px solid rgba(201,168,76,0.4)',
       }}>{verse.arabic_text}</div>
 
-      <p style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: '1.15rem', fontStyle: 'italic', color: 'rgba(245,239,230,0.8)', lineHeight: 1.8, marginBottom: '16px' }}>
-        "{verse.translation}"
-      </p>
+      {!isAr && (
+        <p style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: '1.15rem', fontStyle: 'italic', color: 'rgba(245,239,230,0.8)', lineHeight: 1.8, marginBottom: '16px' }}>
+          "{verse.translation}"
+        </p>
+      )}
 
       {fact && (
         <div style={{ background: 'rgba(201,168,76,0.06)', border: '1px solid rgba(201,168,76,0.15)', borderRadius: '10px', padding: '14px 18px', marginBottom: '16px' }}>
