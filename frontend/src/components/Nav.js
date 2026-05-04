@@ -12,9 +12,6 @@ export default function Nav() {
   const isAr = lang === 'ar';
 
   const navLinks = [['/', t.reflect], ['/journal', t.journal]];
-  if (pathname !== '/') {
-    navLinks.push(['/bookmarks', '🗂️ Bookmarks']);
-  }
 
   return (
     <nav style={{
