@@ -21,8 +21,8 @@ export default function Nav() {
       position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100,
       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
       padding: '18px 40px',
-      background: `linear-gradient(180deg, rgba(var(--ink-rgb, 10,15,30), 0.97) 0%, transparent 100%)`,
-      backdropFilter: 'blur(8px)',
+      background: 'var(--bg)',
+      borderBottom: '1px solid var(--border)',
       direction: isAr ? 'rtl' : 'ltr',
     }}>
       <Link

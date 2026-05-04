@@ -3,11 +3,13 @@ import axios from 'axios';
 import VerseCard from '../components/VerseCard';
 import BookmarksPanel from '../components/BookmarksPanel';
 import { LangContext } from '../App';
+import { useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { T, EXAMPLES } from '../translations';
 
 export default function Home() {
   const { lang } = useContext(LangContext);
+  const location = useLocation();
   const t = T[lang].home;
   const isAr = lang === 'ar';
   const { isLoggedIn, logout, token } = useAuth();
@@ -268,7 +270,7 @@ export default function Home() {
         )}
 
         {/* Floating Bookmark Button */}
-        {isLoggedIn && (
+        {location.pathname === '/' && isLoggedIn && (
           <button
             onClick={() => setIsBookmarksOpen(true)}
             style={{
