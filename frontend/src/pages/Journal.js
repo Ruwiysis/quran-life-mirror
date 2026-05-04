@@ -258,26 +258,41 @@ export default function Journal() {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        let allEntries = [];
+        
+        // Always fetch local entries
+        try {
+          const { data: localData } = await axios.get((process.env.REACT_APP_API_URL || '') + '/api/journal');
+          allEntries = localData;
+        } catch (e) {
+          console.error('Error fetching local entries:', e);
+        }
+        
+        // If logged in, also fetch QF entries (bookmarks/notes)
         if (isLoggedIn && token) {
           try {
-            const { data } = await axios.get((process.env.REACT_APP_API_URL || '') + '/api/user/journal', {
+            const { data: qfData } = await axios.get((process.env.REACT_APP_API_URL || '') + '/api/user/journal', {
               headers: { Authorization: `Bearer ${token}` },
             });
-            try {
-              const streakData = await axios.get((process.env.REACT_APP_API_URL || '') + '/api/user/streaks', {
-                headers: { Authorization: `Bearer ${token}` },
-              });
-              setStreak(streakData.data);
-            } catch { /* silent */ }
-            setEntries(data);
-          } catch {
-            const { data } = await axios.get((process.env.REACT_APP_API_URL || '') + '/api/journal');
-            setEntries(data);
+            // Mark QF entries so we know they're from QF
+            const qfEntries = qfData.map(e => ({ ...e, isFromQF: true }));
+            allEntries = [...allEntries, ...qfEntries].sort((a, b) => 
+              new Date(b.created_at) - new Date(a.created_at)
+            );
+          } catch (e) {
+            console.error('Error fetching QF entries:', e);
           }
-        } else {
-          const { data } = await axios.get((process.env.REACT_APP_API_URL || '') + '/api/journal');
-          setEntries(data);
+          
+          // Fetch streaks
+          try {
+            const streakData = await axios.get((process.env.REACT_APP_API_URL || '') + '/api/user/streaks', {
+              headers: { Authorization: `Bearer ${token}` },
+            });
+            setStreak(streakData.data);
+          } catch { /* silent */ }
         }
+        
+        setEntries(allEntries);
       } catch (e) {
         console.error('Error fetching journal:', e);
       } finally {
@@ -399,7 +414,7 @@ export default function Journal() {
             onUpdate={handleUpdate}
             onDelete={handleDelete}
             lang={lang}
-            isFromQF={entry.source === 'qf'}
+            isFromQF={entry.isFromQF || false}
           />
         </div>
       ))}
