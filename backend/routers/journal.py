@@ -66,7 +66,17 @@ async def update_entry(entry_id: int, update: JournalEntryUpdate):
 @router.delete("/journal/{entry_id}")
 async def delete_entry(entry_id: int):
     db = get_db()
-    db.execute("DELETE FROM journal WHERE id = ?", (entry_id,))
-    db.commit()
-    db.close()
-    return {"status": "deleted"}
+    try:
+        row = db.execute("SELECT * FROM journal WHERE id = ?", (entry_id,)).fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail="Entry not found")
+        db.execute("DELETE FROM journal WHERE id = ?", (entry_id,))
+        db.commit()
+        return {"status": "deleted"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        db.close()

@@ -304,8 +304,13 @@ export default function Journal() {
 
   const handleUpdate = (updated) => setEntries(prev => prev.map(e => e.id === updated.id ? updated : e));
   const handleDelete = async (id) => {
-    await axios.delete(`/api/journal/${id}`);
-    setEntries(prev => prev.filter(e => e.id !== id));
+    try {
+      await axios.delete((process.env.REACT_APP_API_URL || '') + `/api/journal/${id}`);
+      setEntries(prev => prev.filter(e => e.id !== id));
+    } catch (error) {
+      console.error('Error deleting entry:', error);
+      alert(t.deleteError || 'Failed to delete entry');
+    }
   };
 
   const uniqueVerses = [...new Set(entries.map(e => e.verse_key))].length;
