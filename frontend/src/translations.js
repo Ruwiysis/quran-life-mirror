@@ -3,18 +3,6 @@
 
 export const T = {
   en: {
-    bookmarks: {
-      empty: 'No bookmarks yet. Go bookmark verses you want to return to!',
-      loading: 'Loading your bookmarks...',
-    },
-  },
-  ar: {
-    bookmarks: {
-      empty: 'لا علامات بعد. اذهب واحفظ الآيات التي تريد العودة إليها!',
-      loading: 'جار تحميل علاماتك...',
-    },
-  },
-  en: {
     // Nav
     nav: {
       brand: 'مرآة ✦ Mirror',
@@ -50,7 +38,7 @@ export const T = {
       eyebrow: 'Your Journal',
       h1a: 'Your Private Diary',
       h1b: ' — Full Context Entries',
-    subtitle: 'Journal = your story + the verse. Saves full context: situation, mood, note. Your emotional journey organized by date.',
+      subtitle: 'Journal = your story + the verse. Saves full context: situation, mood, note. Your emotional journey organized by date.',
       reflections: 'Reflections',
       versesDiscovered: 'Verses Discovered',
       dayJourney: 'Day Journey',
@@ -96,6 +84,11 @@ export const T = {
         'at peace': 'At Peace',
         'still struggling': 'Still Struggling',
       },
+    },
+
+    bookmarks: {
+      empty: 'No bookmarks yet. Go bookmark verses you want to return to!',
+      loading: 'Loading your bookmarks...',
     },
   },
 
@@ -182,6 +175,11 @@ export const T = {
         'still struggling': 'لا أزال أصارع',
       },
     },
+
+    bookmarks: {
+      empty: 'لا علامات بعد. اذهب واحفظ الآيات التي تريد العودة إليها!',
+      loading: 'جار تحميل علاماتك...',
+    },
   },
 };
 
@@ -204,6 +202,16 @@ export const EXAMPLES = {
   ],
 };
 
+export const DID_YOU_KNOW_AR = {
+  '94:5': 'هذه الآية تُكرَّر مرتين متتاليتين — يقول العلماء إن التكرار متعمّد: اليسر آتٍ مرةً بعد مرة.',
+  '2:286': 'آخر آية في سورة البقرة. قال النبي ﷺ: من قرأها في ليلة كفَتْه.',
+  '39:53': 'من أكثر الآيات إشراقاً بالأمل في القرآن — نزلت خطاباً مباشراً لمن أذنبوا كثيراً.',
+  '50:16': 'يقول الله تعالى إنه أقرب إليك من حبل الوريد — يعلم كل نبضة، وكل خاطر.',
+  '2:153': 'الصبر والصلاة معاً وصفة قرآنية كاملة لمواجهة الشدائد.',
+  '13:28': 'هذه الآية — "أَلَا بِذِكْرِ اللَّهِ تَطْمَئِنُّ الْقُلُوبُ" — يرددها الملايين عند القلق.',
+  '93:3': 'سورة الضحى نزلت في فترة كان النبي ﷺ يمرّ فيها بضيق شديد.',
+};
+
 export const DID_YOU_KNOW = {
   en: {
     '94:5': 'This verse is repeated twice in a row — scholars say the repetition is deliberate: ease will come not just once, but again and again.',
@@ -214,13 +222,5 @@ export const DID_YOU_KNOW = {
     '13:28': 'This verse — "in the remembrance of Allah do hearts find rest" — is recited by millions when anxious.',
     '93:3': 'Surah Ad-Duha was revealed during a period when the Prophet ﷺ was in deep distress.',
   },
-  ar: {
-    '94:5': 'هذه الآية تُكرَّر مرتين متتاليتين — يقول العلماء إن التكرار متعمّد: اليسر آتٍ مرةً بعد مرة.',
-    '2:286': 'آخر آية في سورة البقرة. قال النبي ﷺ: من قرأها في ليلة كفَتْه.',
-    '39:53': 'من أكثر الآيات إشراقاً بالأمل في القرآن — نزلت خطاباً مباشراً لمن أذنبوا كثيراً.',
-    '50:16': 'يقول الله تعالى إنه أقرب إليك من حبل الوريد — يعلم كل نبضة، وكل خاطر.',
-    '2:153': 'الصبر والصلاة معاً وصفة قرآنية كاملة لمواجهة الشدائد.',
-    '13:28': 'هذه الآية — "أَلَا بِذِكْرِ اللَّهِ تَطْمَئِنُّ الْقُلُوبُ" — يرددها الملايين عند القلق.',
-    '93:3': 'سورة الضحى نزلت في فترة كان النبي ﷺ يمرّ فيها بضيق شديد.',
-  },
+  ar: DID_YOU_KNOW_AR,
 };

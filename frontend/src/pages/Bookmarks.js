@@ -3,18 +3,15 @@ import axios from 'axios';
 import { LangContext } from '../App';
 import { useAuth } from '../context/AuthContext';
 import VerseCard from '../components/VerseCard';
-import { T } from '../translations';
 
 const API = process.env.REACT_APP_API_URL || '';
 
 export default function Bookmarks() {
   const { lang } = useContext(LangContext);
-  const t = T[lang].bookmarks || {}; // Will update translations
   const isAr = lang === 'ar';
   const { isLoggedIn, token } = useAuth();
   const fontFamily = isAr ? "'Noto Sans Arabic',sans-serif" : "'DM Sans',sans-serif";
 
-  const [bookmarks, setBookmarks] = useState([]);
   const [verses, setVerses] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -29,7 +26,6 @@ export default function Bookmarks() {
         const { data } = await axios.get(API + '/api/user/bookmarks', {
           headers: { Authorization: `Bearer ${token}` }
         });
-        setBookmarks(data);
         // Fetch verse data parallel
         const versePromises = data.map(async (b) => {
           try {
@@ -42,8 +38,8 @@ export default function Bookmarks() {
         });
         const verseDatas = await Promise.all(versePromises);
         const verseMap = {};
-        verseDatas.forEach((v, i) => {
-          if (v) verseMap[data[i].verse_key] = v;
+        verseDatas.forEach((v) => {
+          if (v) verseMap[v.verse_key] = v;
         });
         setVerses(verseMap);
       } catch (e) {
@@ -106,4 +102,3 @@ export default function Bookmarks() {
     </main>
   );
 }
-

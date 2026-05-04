@@ -3,7 +3,6 @@ import axios from 'axios';
 import { format } from 'date-fns';
 import { arSA } from 'date-fns/locale';
 import { LangContext } from '../App';
-import { useAuth } from '../context/AuthContext';
 import { T, DID_YOU_KNOW } from '../translations';
 
 const MOOD_EMOJI = {
@@ -249,11 +248,9 @@ export default function Journal() {
   const t = T[lang].journal;
   const isAr = lang === 'ar';
   const fontFamily = isAr ? "'Noto Sans Arabic', 'DM Sans', sans-serif" : "'DM Sans', sans-serif";
-  const { isLoggedIn, token } = useAuth();
 
   const [entries, setEntries] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [streak, setStreak] = useState({ current_streak: 0, longest_streak: 0, total_days: 0 });
 
   useEffect(() => {
     const fetchData = async () => {
@@ -278,14 +275,14 @@ export default function Journal() {
       setEntries(prev => prev.filter(e => e.id !== id));
     } catch (error) {
       console.error('Error deleting entry:', error);
-      alert(t.deleteError || 'Failed to delete entry');
+      alert(t.saveError || 'Failed to delete entry');
     }
   };
 
   const uniqueVerses = [...new Set(entries.map(e => e.verse_key))].length;
-  const daysJourney = streak.current_streak || (entries.length > 0
+  const daysJourney = entries.length > 0
     ? Math.max(1, Math.ceil((Date.now() - new Date(entries[entries.length - 1].created_at)) / 86400000))
-    : 0);
+    : 0;
   const streakMsg = entries.length > 0 ? t.streakMsg(daysJourney) : '';
 
   // Month/year label with locale
@@ -326,7 +323,7 @@ export default function Journal() {
       </div>
 
       {/* Stats */}
-      {!loading && entries.length > 0 && (
+      {entries.length > 0 && (
         <div style={{ display: 'flex', gap: '16px', marginBottom: '32px', flexWrap: 'wrap' }} className="fade-up-delay-1">
           {[
             { num: entries.length, label: t.reflections },
