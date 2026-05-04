@@ -3,6 +3,18 @@
 
 export const T = {
   en: {
+    bookmarks: {
+      empty: 'No bookmarks yet. Go bookmark verses you want to return to!',
+      loading: 'Loading your bookmarks...',
+    },
+  },
+  ar: {
+    bookmarks: {
+      empty: 'لا علامات بعد. اذهب واحفظ الآيات التي تريد العودة إليها!',
+      loading: 'جار تحميل علاماتك...',
+    },
+  },
+  en: {
     // Nav
     nav: {
       brand: 'مرآة ✦ Mirror',
@@ -36,9 +48,9 @@ export const T = {
     // Journal
     journal: {
       eyebrow: 'Your Journal',
-      h1a: 'Your Life, Mirrored',
-      h1b: 'in the Quran',
-      subtitle: "Every situation you've brought. Every verse that answered.",
+      h1a: 'Your Private Diary',
+      h1b: ' — Full Context Entries',
+    subtitle: 'Journal = your story + the verse. Saves full context: situation, mood, note. Your emotional journey organized by date.',
       reflections: 'Reflections',
       versesDiscovered: 'Verses Discovered',
       dayJourney: 'Day Journey',

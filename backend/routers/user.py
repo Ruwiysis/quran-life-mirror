@@ -3,7 +3,8 @@ from pydantic import BaseModel
 from typing import Optional, List
 import httpx, os
 from dotenv import load_dotenv
-from services.qf_auth_service import get_user_api_headers
+from services.qf_auth_service import get_user_api_headers, refresh_user_token
+QF_AUTH_ENDPOINT = "https://auth.api.qurancdn.com"  # Add if not defined
 
 load_dotenv()
 router = APIRouter()
@@ -11,6 +12,7 @@ QF_API_BASE = os.getenv("QF_API_BASE")
 
 class BookmarkData(BaseModel):
     verse_key: str
+    refresh_token: Optional[str] = None
 
 class BookmarkResponse(BaseModel):
     id: str
@@ -21,6 +23,7 @@ class NoteData(BaseModel):
     verse_key: str
     note_text: str
     situation: Optional[str] = None
+    refresh_token: Optional[str] = None
 
 class NoteResponse(BaseModel):
     id: str
@@ -46,24 +49,29 @@ def get_token(authorization: Optional[str]) -> str:
         raise HTTPException(status_code=401, detail="Missing authorization header")
     return authorization.replace("Bearer ", "").strip()
 
+async def _qf_call_with_retry(client, method: str, url: str, headers: dict, json=None, refresh_token: Optional[str] = None):
+    r = await client.request(method, url, headers=headers, json=json)
+    if r.status_code in [401, 403] and refresh_token and 'invalid_token' in r.text.lower():
+        try:
+            new_tokens = await refresh_user_token(refresh_token)
+            headers = headers.copy()
+            headers['x-auth-token'] = new_tokens['access_token']
+            r = await client.request(method, url, headers=headers, json=json)
+        except Exception as refresh_e:
+            print(f'Refresh failed: {refresh_e}')
+    return r
+
 @router.post("/user/bookmark")
 async def create_bookmark(data: BookmarkData, authorization: Optional[str] = Header(None)):
     token = get_token(authorization)
-    try:
-        async with httpx.AsyncClient(timeout=10.0) as client:
-            r = await client.post(
-                f"{QF_API_BASE}/auth/api/v1/bookmarks",
-                headers=get_user_api_headers(token),
-                json={"verse_key": data.verse_key}
-            )
-            print(f"Bookmark response: {r.status_code} {r.text[:200]}")
-            if r.status_code in [200, 201]:
-                result = r.json()
-                return {"id": str(result.get("id", data.verse_key)), "verse_key": data.verse_key, "created_at": result.get("created_at", "")}
-            raise Exception(f"QF API error: {r.status_code} {r.text[:100]}")
-    except Exception as e:
-        print(f"Bookmark error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        headers = get_user_api_headers(token)
+        r = await _qf_call_with_retry(client, 'POST', f"{QF_API_BASE}/auth/api/v1/bookmarks", headers, json={"verse_key": data.verse_key}, refresh_token=data.refresh_token)
+        print(f"Bookmark response: {r.status_code} {r.text[:200]}")
+        if r.status_code in [200, 201]:
+            result = r.json()
+            return {"id": str(result.get("id", data.verse_key)), "verse_key": data.verse_key, "created_at": result.get("created_at", "")}
+        raise Exception(f"QF API error: {r.status_code} {r.text[:100]}")
 
 @router.get("/user/bookmarks")
 async def get_bookmarks(authorization: Optional[str] = Header(None)):

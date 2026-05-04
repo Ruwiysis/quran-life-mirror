@@ -91,6 +91,7 @@ function AppContent() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/journal" element={<Journal />} />
+          <Route path="/bookmarks" element={<Bookmarks />} />
           <Route path="/callback" element={<CallbackPage />} />
         </Routes>
       </BrowserRouter>

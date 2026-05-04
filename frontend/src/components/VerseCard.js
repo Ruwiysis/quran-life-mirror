@@ -10,7 +10,7 @@ const T = {
     reflection: 'Personal Reflection', saveJournal: '+ Save to Journal', saved: '✓ Saved',
     listen: '▶ Listen', stop: '⏸ Stop',
     didYouKnow: 'Did you know?', addNote: 'Add your own note...',
-    saveBookmark: '+ Bookmark', bookmarked: '✓ Bookmarked',
+    saveBookmark: '+ Bookmark Verse', bookmarked: '✓ Bookmarked',
     tafsirLabel: '📖 Tafsir (Ibn Kathir)',
     howFeel: 'How does this make you feel?',
     loginToBookmark: 'Please log in to bookmark verses.',
@@ -19,7 +19,7 @@ const T = {
     reflection: 'تأمّل شخصي', saveJournal: '+ أضف للمذكّرة', saved: '✓ تم الحفظ',
     listen: '▶ استمع', stop: '⏸ إيقاف',
     didYouKnow: 'هل تعلم؟', addNote: 'أضف ملاحظتك الشخصية...',
-    saveBookmark: '+ حفظ العلامة', bookmarked: '✓ تم الحفظ',
+    saveBookmark: '+ حفظ الآية', bookmarked: '✓ تم الحفظ',
     tafsirLabel: '📖 تفسير ابن كثير',
     howFeel: 'كيف تشعر الآن؟',
     loginToBookmark: 'يرجى تسجيل الدخول لحفظ العلامات.',
@@ -62,7 +62,7 @@ export default function VerseCard({ verse, situation, index }) {
   const { lang } = useContext(LangContext);
   const t = T[lang];
   const isAr = lang === 'ar';
-  const { isLoggedIn, token } = useAuth();
+  const { isLoggedIn, token, refreshAccessToken } = useAuth();
 
   const [saved, setSaved] = useState(false);
   const [bookmarked, setBookmarked] = useState(false);
@@ -106,14 +106,24 @@ export default function VerseCard({ verse, situation, index }) {
   const handleBookmark = async () => {
     if (bookmarked) return;
     if (!isLoggedIn || !token) { alert(t.loginToBookmark); return; }
-    try {
-      await axios.post(API + '/api/user/bookmark',
-        { verse_key: verse.verse_key },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      setBookmarked(true);
-    } catch (e) {
-      alert('Could not bookmark: ' + (e?.response?.data?.detail || e.message));
+    let retries = 0;
+    while (retries < 2) {
+      try {
+        await axios.post(API + '/api/user/bookmark',
+          { verse_key: verse.verse_key },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        setBookmarked(true);
+        return;
+      } catch (e) {
+        if (e.response?.status === 403 && e.response?.data?.message?.includes('invalid_token') && refreshAccessToken && retries === 0) {
+          retries++;
+          await refreshAccessToken();
+          continue;
+        }
+        alert('Could not bookmark: ' + (e?.response?.data?.detail || e.message));
+        break;
+      }
     }
   };
 

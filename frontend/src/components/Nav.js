@@ -30,7 +30,7 @@ export default function Nav() {
       </Link>
 
       <div style={{ display: 'flex', gap: '24px', alignItems: 'center' }}>
-        {[['/', t.reflect], ['/journal', t.journal]].map(([path, label]) => (
+{[['/', t.reflect], ['/journal', t.journal], ['/bookmarks', '🗂️ Bookmarks']].map(([path, label]) => (
           <Link key={path} to={path} style={{
             fontFamily: "'DM Sans',sans-serif",
             fontSize: '0.85rem', fontWeight: 400,

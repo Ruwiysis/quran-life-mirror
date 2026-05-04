@@ -259,43 +259,9 @@ export default function Journal() {
     const fetchData = async () => {
       setLoading(true);
       try {
-        let allEntries = [];
-        
-        // Always fetch local entries
-        try {
-          const { data: localData } = await axios.get((process.env.REACT_APP_API_URL || '') + '/api/journal');
-          allEntries = localData;
-        } catch (e) {
-          console.error('Error fetching local entries:', e);
-        }
-        
-        // If logged in, also fetch QF entries (bookmarks/notes)
-        if (isLoggedIn && token) {
-          try {
-            console.log('Fetching QF entries for user:', token.substring(0, 20) + '...');
-            const { data: qfData } = await axios.get((process.env.REACT_APP_API_URL || '') + '/api/user/journal', {
-              headers: { Authorization: `Bearer ${token}` },
-              params: { t: Date.now() }, // Cache-busting param
-            });
-            // Mark QF entries so we know they're from QF
-            const qfEntries = qfData.map(e => ({ ...e, isFromQF: true }));
-            allEntries = [...allEntries, ...qfEntries].sort((a, b) => 
-              new Date(b.created_at) - new Date(a.created_at)
-            );
-          } catch (e) {
-            console.error('Error fetching QF entries:', e);
-          }
-          
-          // Fetch streaks
-          try {
-            const streakData = await axios.get((process.env.REACT_APP_API_URL || '') + '/api/user/streaks', {
-              headers: { Authorization: `Bearer ${token}` },
-            });
-            setStreak(streakData.data);
-          } catch { /* silent */ }
-        }
-        
-        setEntries(allEntries);
+        // Local journal entries only
+        const { data: localData } = await axios.get((process.env.REACT_APP_API_URL || '') + '/api/journal');
+        setEntries(localData);
       } catch (e) {
         console.error('Error fetching journal:', e);
       } finally {
@@ -303,7 +269,7 @@ export default function Journal() {
       }
     };
     fetchData();
-  }, [isLoggedIn, token]);
+  }, []);
 
   const handleUpdate = (updated) => setEntries(prev => prev.map(e => e.id === updated.id ? updated : e));
   const handleDelete = async (id) => {
