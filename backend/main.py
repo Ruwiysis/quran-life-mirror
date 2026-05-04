@@ -33,3 +33,16 @@ async def root():
 async def health():
     return {"status": "ok"}
 
+@app.on_event("startup")
+async def keep_warm():
+    import asyncio, httpx
+    async def ping():
+        while True:
+            await asyncio.sleep(840)
+            try:
+                async with httpx.AsyncClient() as client:
+                    await client.get("https://quran-life-mirror-backend.onrender.com/health", timeout=5)
+            except:
+                pass
+    asyncio.create_task(ping())
+
