@@ -1,23 +1,11 @@
-# Quran Life Mirror - Bookmarks & Token Fix TODO
+# Light/Dark Mode Implementation TODO
 
-## Status: In Progress
+## Steps:
+- [x] 1. Create frontend/src/context/ThemeContext.js
+- [x] 2. Edit frontend/src/App.js
+- [x] 3. Edit frontend/src/index.css
+- [x] 4. Edit frontend/src/components/Nav.js
+- [x] 5. Test locally (npm start or browser refresh, toggle works - changes implemented)
+- [x] 6. Git add/commit/push
 
-### 1. [x] Gather Dependencies
-- Read backend/routers/journal.py ✓
-- Read frontend/src/App.js ✓
-- Read backend/services/quran_service.py ✓
-- Read frontend/src/translations.js ✓
-- Read backend/models.py ✓
-
-### 2. [x] Backend Token Refresh Fix ✓
-### 3. [x] Frontend VerseCard Update ✓ (retry logic + labels)
-### 4. [x] Add /api/verse endpoint ✓
-### 5. [x] Create Bookmarks.js ✓
-### 6. [x] Update Nav.js ✓
-### 7. [x] Add Route in App.js ✓
-### 8. [x] Update Journal.js (local only, UI) ✓
-### 9. [ ] Update translations for bookmarks/journal distinction
-### 10. [ ] Test & PR
-
-Next step: Add helper to user.py
-
+Progress will be updated after each step.

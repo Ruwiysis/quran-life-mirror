@@ -3,7 +3,9 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Nav from './components/Nav';
 import Home from './pages/Home';
 import Journal from './pages/Journal';
+import Bookmarks from './pages/Bookmarks';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { ThemeProvider, useTheme } from './context/ThemeContext';
 
 export const LangContext = React.createContext({ lang: 'en', setLang: () => {} });
 
@@ -39,8 +41,8 @@ function CallbackPage() {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      background: '#0a0f1e',
-      color: '#f5efe6',
+      background: 'var(--bg, #0a0f1e)',
+      color: 'var(--text, #f5efe6)',
       fontFamily: "'DM Sans', sans-serif",
     }}>
       <div style={{ textAlign: 'center' }}>
@@ -53,8 +55,8 @@ function CallbackPage() {
               display: 'inline-block',
               width: '30px',
               height: '30px',
-              border: '3px solid rgba(201,168,76,0.3)',
-              borderTop: '3px solid #c9a84c',
+              border: '3px solid var(--gold-dim)',
+              borderTop: '3px solid var(--gold)',
               borderRadius: '50%',
               animation: 'spin 1s linear infinite',
             }} />
@@ -68,7 +70,7 @@ function CallbackPage() {
           <div>
             <div style={{ fontSize: '1.1rem', marginBottom: '16px' }}>❌ {error}</div>
             <a href="/" style={{
-              color: '#c9a84c',
+              color: 'var(--gold)',
               textDecoration: 'none',
               fontSize: '0.95rem',
             }}>
@@ -83,6 +85,11 @@ function CallbackPage() {
 
 function AppContent() {
   const [lang, setLang] = useState('en');
+  const { theme } = useTheme();
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+  }, [theme]);
 
   return (
     <LangContext.Provider value={{ lang, setLang }}>
@@ -102,8 +109,9 @@ function AppContent() {
 export default function App() {
   return (
     <AuthProvider>
-      <AppContent />
+      <ThemeProvider>
+        <AppContent />
+      </ThemeProvider>
     </AuthProvider>
   );
 }
-
