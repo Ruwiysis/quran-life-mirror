@@ -23,23 +23,14 @@ export default function Bookmarks() {
     }
     const fetchBookmarks = async () => {
       try {
-        const { data } = await axios.get(API + '/api/user/bookmarks', {
+        const { data } = await axios.get(API + '/api/user/bookmarks-with-verses', {
           headers: { Authorization: `Bearer ${token}` }
         });
-        // Fetch verse data parallel
-        const versePromises = data.map(async (b) => {
-          try {
-            const { data } = await axios.get(API + '/api/verse/' + b.verse_key);
-            return data;
-          } catch (e) {
-            console.log('Verse fetch error:', b.verse_key, e);
-            return null;
-          }
-        });
-        const verseDatas = await Promise.all(versePromises);
         const verseMap = {};
-        verseDatas.forEach((v) => {
-          if (v) verseMap[v.verse_key] = v;
+        data.forEach(b => {
+          if (b.verse) {
+            verseMap[b.verse_key] = b.verse;
+          }
         });
         setVerses(verseMap);
       } catch (e) {

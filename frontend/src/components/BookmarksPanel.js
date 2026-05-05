@@ -58,6 +58,12 @@ export default function BookmarksPanel({ isOpen, onClose, refreshTrigger }) {
 
   return (
     <>
+      <style>{`
+        @keyframes slideInRight {
+          from { transform: translateX(100%); opacity: 0; }
+          to { transform: translateX(0); opacity: 1; }
+        }
+      `}</style>
       {/* Overlay */}
       <div 
         style={{
@@ -71,10 +77,9 @@ export default function BookmarksPanel({ isOpen, onClose, refreshTrigger }) {
         style={{
           position: 'fixed', top: 0, right: 0,
           width: 'min(90vw, 420px)', height: '100vh',
-          background: 'var(--bg-secondary)',
+          background: 'var(--bg)',
           boxShadow: 'var(--shadow-md)',
           zIndex: 1000,
-          transform: 'translateX(100%)',
           animation: 'slideInRight 0.3s cubic-bezier(0.25,0.46,0.45,0.94) forwards',
           overflowY: 'auto',
           fontFamily,
@@ -119,7 +124,7 @@ export default function BookmarksPanel({ isOpen, onClose, refreshTrigger }) {
                 </div>
                 {surahVerses.map((verse, i) => (
                   <div key={verse.verse_key} style={{ marginBottom: '16px' }}>
-                    <VerseCard verse={verse} index={i} lang={lang} compact />
+                    <VerseCard verse={verse} index={i} lang={lang} />
                   </div>
                 ))}
               </div>
