@@ -24,14 +24,16 @@ export default function BookmarksPanel({ isOpen, onClose, refreshTrigger }) {
           headers: { Authorization: `Bearer ${token}` }
         });
         const verseMap = {};
-        data.forEach(b => {
+        if (Array.isArray(data)) {
+          data.forEach(b => {
           if (b.verse) {
             verseMap[b.verse_key] = b.verse;
           }
         });
         setVerses(verseMap);
       } catch (e) {
-        console.log('Bookmarks fetch error:', e);
+        console.error('Bookmarks fetch error:', e.response?.data || e.message);
+        console.log('Full response:', e.response);
       } finally {
         setLoading(false);
       }

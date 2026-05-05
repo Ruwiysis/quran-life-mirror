@@ -257,7 +257,7 @@ export default function Journal() {
       setLoading(true);
       try {
         // Local journal entries only
-        const { data: localData } = await axios.get((process.env.REACT_APP_API_URL || '') + '/api/journal');
+        const { data: localData } = await axios.get((import.meta.env.VITE_API_URL || '') + '/api/journal');
         setEntries(localData);
       } catch (e) {
         console.error('Error fetching journal:', e);
@@ -271,7 +271,7 @@ export default function Journal() {
   const handleUpdate = (updated) => setEntries(prev => prev.map(e => e.id === updated.id ? updated : e));
   const handleDelete = async (id) => {
     try {
-      await axios.delete((process.env.REACT_APP_API_URL || '') + `/api/journal/${id}`);
+      await axios.delete((import.meta.env.VITE_API_URL || '') + `/api/journal/${id}`);
       setEntries(prev => prev.filter(e => e.id !== id));
     } catch (error) {
       console.error('Error deleting entry:', error);

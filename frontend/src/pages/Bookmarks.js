@@ -4,7 +4,7 @@ import { LangContext } from '../App';
 import { useAuth } from '../context/AuthContext';
 import VerseCard from '../components/VerseCard';
 
-const API = process.env.REACT_APP_API_URL || '';
+const API = import.meta.env.VITE_API_URL || '';
 
 export default function Bookmarks() {
   const { lang } = useContext(LangContext);
