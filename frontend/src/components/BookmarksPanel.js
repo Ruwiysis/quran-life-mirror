@@ -26,10 +26,11 @@ export default function BookmarksPanel({ isOpen, onClose, refreshTrigger }) {
         const verseMap = {};
         if (Array.isArray(data)) {
           data.forEach(b => {
-          if (b.verse) {
-            verseMap[b.verse_key] = b.verse;
-          }
-        });
+            if (b.verse) {
+              verseMap[b.verse_key] = b.verse;
+            }
+          });
+        }
         setVerses(verseMap);
       } catch (e) {
         console.error('Bookmarks fetch error:', e.response?.data || e.message);
