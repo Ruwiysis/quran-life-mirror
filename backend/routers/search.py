@@ -202,11 +202,14 @@ async def search_situation(request: SituationRequest):
 
         async def fetch_and_reflect(verse_key: str):
             try:
-                verse_data = await get_verse(verse_key)
+                # Fetch verse data, audio URL, and surah name in parallel
+                verse_data, audio_url, surah_name = await asyncio.gather(
+                    get_verse(verse_key),
+                    get_audio_url(verse_key),
+                    get_surah_name(verse_key)
+                )
                 if not verse_data or not verse_data.get("translation"):
                     return None
-                audio_url = await get_audio_url(verse_key)
-                surah_name = await get_surah_name(verse_key)
                 reflection = await generate_reflection(
                     request.situation, 
                     verse_key, 
