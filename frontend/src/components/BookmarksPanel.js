@@ -6,7 +6,7 @@ import axios from 'axios';
 
 const API = process.env.REACT_APP_API_URL || '';
 
-export default function BookmarksPanel({ isOpen, onClose }) {
+export default function BookmarksPanel({ isOpen, onClose, refreshTrigger }) {
   const { token } = useAuth();
   const { lang } = useContext(LangContext);
   const isAr = lang === 'ar';
@@ -20,31 +20,24 @@ export default function BookmarksPanel({ isOpen, onClose }) {
     setLoading(true);
     const fetchBookmarks = async () => {
       try {
-        const { data } = await axios.get(API + '/api/user/bookmarks', {
+        const { data } = await axios.get(API + '/api/user/bookmarks-with-verses', {
           headers: { Authorization: `Bearer ${token}` }
         });
-        const versePromises = data.map(async (b) => {
-          try {
-            const { data } = await axios.get(API + '/api/verse/' + b.verse_key);
-            return data;
-          } catch {
-            return null;
+        const verseMap = {};
+        data.forEach(b => {
+          if (b.verse) {
+            verseMap[b.verse_key] = b.verse;
           }
         });
-        const verseDatas = await Promise.all(versePromises);
-        const verseMap = {};
-        verseDatas.forEach((v) => {
-          if (v) verseMap[v.verse_key] = v;
-        });
         setVerses(verseMap);
-      } catch {
-        // Silent fail
+      } catch (e) {
+        console.log('Bookmarks fetch error:', e);
       } finally {
         setLoading(false);
       }
     };
     fetchBookmarks();
-  }, [isOpen, token]);
+  }, [isOpen, token, refreshTrigger]);
 
   const groupedVerses = {};
   Object.values(verses).forEach(v => {

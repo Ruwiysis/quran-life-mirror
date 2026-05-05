@@ -22,6 +22,11 @@ export default function Home() {
   const [authLoading, setAuthLoading] = useState(false);
   const [isBookmarksOpen, setIsBookmarksOpen] = useState(false);
   const [bookmarkCount, setBookmarkCount] = useState(0);
+  const [bookmarkRefresh, setBookmarkRefresh] = useState(0);
+
+  const onBookmarkSaved = () => {
+    setBookmarkRefresh(prev => prev + 1);
+  };
 
   // Fetch bookmark count periodically
   useEffect(() => {
@@ -264,7 +269,7 @@ export default function Home() {
               {t.found(results.length)}
             </div>
             {results.map((verse, i) => (
-              <VerseCard key={verse.verse_key} verse={verse} situation={situation} index={i} lang={lang} />
+              <VerseCard key={verse.verse_key} verse={verse} situation={situation} index={i} lang={lang} onBookmarkSaved={onBookmarkSaved} />
             ))}
           </div>
         )}
@@ -318,7 +323,7 @@ export default function Home() {
         )}
 
       </main>
-      <BookmarksPanel isOpen={isBookmarksOpen} onClose={() => setIsBookmarksOpen(false)} />
+      <BookmarksPanel isOpen={isBookmarksOpen} onClose={() => setIsBookmarksOpen(false)} refreshTrigger={bookmarkRefresh} />
     </>
   );
 }

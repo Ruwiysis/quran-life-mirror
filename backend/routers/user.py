@@ -4,6 +4,7 @@ from typing import Optional, List
 import httpx, os, sqlite3
 from datetime import datetime
 from dotenv import load_dotenv
+from services.quran_service import get_verse
 
 load_dotenv()
 router = APIRouter()
@@ -113,6 +114,68 @@ async def get_bookmarks(authorization: Optional[str] = Header(None)):
     except Exception as e:
         print(f"Local bookmarks error: {e}")
         return []
+
+@router.get("/user/bookmarks-with-verses")
+async def get_bookmarks_with_verses(authorization: Optional[str] = Header(None)):
+    """Get bookmarks with full verse data in one call — avoids N+1 queries"""
+    import asyncio
+    token = get_token(authorization)
+    
+    # Get bookmarks list
+    bookmarks = []
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            r = await client.get(f"{QF_API_BASE}/auth/api/v1/bookmarks", headers=qf_headers(token))
+            if r.status_code == 200:
+                data = r.json()
+                bookmarks = data if isinstance(data, list) else data.get("bookmarks", data.get("data", []))
+    except Exception as e:
+        print(f"QF bookmarks error: {e}")
+    
+    # Fallback to local if no QF bookmarks
+    if not bookmarks:
+        try:
+            conn = sqlite3.connect(DB_PATH)
+            cursor = conn.cursor()
+            cursor.execute("SELECT id, verse_key, created_at FROM bookmarks ORDER BY created_at DESC")
+            rows = cursor.fetchall()
+            conn.close()
+            bookmarks = [{"id": str(r[0]), "verse_key": r[1], "created_at": r[2]} for r in rows]
+        except Exception as e:
+            print(f"Local bookmarks error: {e}")
+            return []
+    
+    # Fetch all verses in parallel
+    verse_keys = [b.get("verse_key") for b in bookmarks]
+    verses = {}
+    
+    async def fetch_verse(key):
+        try:
+            verse = await get_verse(key)
+            return key, verse
+        except Exception as e:
+            print(f"Verse fetch error for {key}: {e}")
+            return key, None
+    
+    tasks = [fetch_verse(key) for key in verse_keys]
+    results = await asyncio.gather(*tasks, return_exceptions=True)
+    
+    for result in results:
+        if isinstance(result, tuple):
+            key, verse = result
+            if verse:
+                verses[key] = verse
+    
+    # Return bookmarks with verse data
+    return [
+        {
+            "id": str(b.get("id", "")),
+            "verse_key": b.get("verse_key", ""),
+            "created_at": b.get("created_at", ""),
+            "verse": verses.get(b.get("verse_key"))
+        }
+        for b in bookmarks
+    ]
 
 @router.delete("/user/bookmark/{bookmark_id}")
 async def delete_bookmark(bookmark_id: str, authorization: Optional[str] = Header(None)):

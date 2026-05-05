@@ -58,7 +58,7 @@ function stripArabic(text) {
     .trim();
 }
 
-export default function VerseCard({ verse, situation, index }) {
+export default function VerseCard({ verse, situation, index, onBookmarkSaved }) {
   const { lang } = useContext(LangContext);
   const t = T[lang];
   const isAr = lang === 'ar';
@@ -115,6 +115,7 @@ export default function VerseCard({ verse, situation, index }) {
           { headers: { Authorization: `Bearer ${currentToken}` } }
         );
         setBookmarked(true);
+        if (onBookmarkSaved) onBookmarkSaved();
         return;
       } catch (e) {
         const message = e?.response?.data?.message || e?.response?.data?.detail || '';
