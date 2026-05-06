@@ -28,24 +28,17 @@ export default function Home() {
     setBookmarkRefresh(prev => prev + 1);
   };
 
-  // Fetch bookmarks immediately on login/refresh, then keep count updated
+  // Fetch bookmark count periodically
   useEffect(() => {
     if (!isLoggedIn || !token) return;
-
-    const fetchCount = async () => {
+    const interval = setInterval(async () => {
       try {
         const { data } = await axios.get((process.env.REACT_APP_API_URL || '') + '/api/user/bookmarks', {
           headers: { Authorization: `Bearer ${token}` }
         });
         setBookmarkCount(data.length);
       } catch {}
-    };
-
-    // Fetch immediately so count is ready on load/refresh
-    fetchCount();
-
-    // Then keep refreshing every 30s (no need for 5s polling)
-    const interval = setInterval(fetchCount, 30000);
+    }, 5000);
     return () => clearInterval(interval);
   }, [isLoggedIn, token]);
 
@@ -53,7 +46,7 @@ export default function Home() {
     if (!situation.trim() || situation.length < 10) { setError(t.errorShort); return; }
     setError(''); setLoading(true); setResults([]);
     try {
-      const { data } = await axios.post((import.meta.env.VITE_API_URL || '') + '/api/search', { situation });
+      const { data } = await axios.post((process.env.REACT_APP_API_URL || '') + '/api/search', { situation });
       setResults(data);
     } catch (e) {
       setError(e?.response?.data?.detail || t.errorGeneral);
@@ -63,7 +56,7 @@ export default function Home() {
   const handleLogin = async () => {
     setAuthLoading(true);
     try {
-      const response = await axios.get((import.meta.env.VITE_API_URL || '') + '/api/auth/login');
+      const response = await axios.get((process.env.REACT_APP_API_URL || '') + '/api/auth/login');
       window.location.href = response.data.auth_url;
     } catch (e) {
       setError(t.loginError + (e?.response?.data?.detail || e.message));
