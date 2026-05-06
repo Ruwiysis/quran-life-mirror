@@ -2,7 +2,7 @@
 from fastapi import APIRouter, HTTPException
 from models import SituationRequest, VerseResult
 from services.claude_service import generate_reflection, pick_verses, generate_all_reflections
-from services.quran_service import get_verse, get_audio_url, get_surah_name, get_tafsir
+from services.quran_service import get_verse, get_audio_url, get_surah_name
 from typing import List
 import asyncio, random
 
@@ -183,6 +183,13 @@ def build_verse_pool(emotions: List[str]) -> List[str]:
     random.shuffle(unique)
     return unique[:16]
 
+@router.get("/search", response_model=List[VerseResult])
+async def search_situation_get(q: str):
+    if not q or len(q.strip()) < 5:
+        raise HTTPException(400, "Please provide a search query with at least 5 characters (?q=your_situation)")
+    request = SituationRequest(situation=q)
+    return await search_situation(request)
+
 @router.post("/search", response_model=List[VerseResult])
 async def search_situation(request: SituationRequest):
     if not request.situation or len(request.situation.strip()) < 5:
@@ -194,15 +201,14 @@ async def search_situation(request: SituationRequest):
             picked_keys = await pick_verses(request.situation, [{"verse_key": k} for k in verse_pool], count=6)
         except Exception:
             picked_keys = verse_pool[:6]
-        
-        # Assign relevance scores — first verse gets highest score
+
         relevance_scores = {}
         for i, key in enumerate(picked_keys):
             relevance_scores[key] = round(1.0 - (i * 0.08), 2)
 
         async def fetch_and_reflect(verse_key: str):
             try:
-                # Fetch verse data, audio URL, and surah name in parallel
+                # ✅ No tafsir here — fetched lazily on demand via /api/verse/{key}/tafsir
                 verse_data, audio_url, surah_name = await asyncio.gather(
                     get_verse(verse_key),
                     get_audio_url(verse_key),
@@ -211,22 +217,22 @@ async def search_situation(request: SituationRequest):
                 if not verse_data or not verse_data.get("translation"):
                     return None
                 reflection = await generate_reflection(
-                    request.situation, 
-                    verse_key, 
-                    verse_data.get("translation",""),
-                    tafsir_en=verse_data.get("tafsir_en", ""),
-                    tafsir_ar=verse_data.get("tafsir_ar", "")
+                    request.situation,
+                    verse_key,
+                    verse_data.get("translation", ""),
+                    tafsir_en="",
+                    tafsir_ar=""
                 )
                 return VerseResult(
                     verse_key=verse_key,
                     surah_name=surah_name,
-                    arabic_text=verse_data.get("arabic",""),
-                    translation=verse_data.get("translation",""),
+                    arabic_text=verse_data.get("arabic", ""),
+                    translation=verse_data.get("translation", ""),
                     audio_url=audio_url or "",
                     reflection=reflection,
                     relevance_score=relevance_scores.get(verse_key, 0.5),
-                    tafsir_en=verse_data.get("tafsir_en"),
-                    tafsir_ar=verse_data.get("tafsir_ar")
+                    tafsir_en=None,
+                    tafsir_ar=None,
                 )
             except Exception as e:
                 print(f"Error processing verse {verse_key}: {e}")
@@ -235,7 +241,6 @@ async def search_situation(request: SituationRequest):
         tasks = [fetch_and_reflect(key) for key in picked_keys]
         results_raw = await asyncio.gather(*tasks, return_exceptions=True)
         results = [r for r in results_raw if isinstance(r, VerseResult)]
-        # Sort by relevance score highest first
         results.sort(key=lambda x: x.relevance_score, reverse=True)
         if not results:
             raise HTTPException(500, "Could not fetch verses. Please try again.")
@@ -244,3 +249,16 @@ async def search_situation(request: SituationRequest):
         raise
     except Exception as e:
         raise HTTPException(500, f"Error: {str(e)}")
+
+@router.get("/verse/{verse_key:path}/tafsir")
+async def get_verse_tafsir(verse_key: str, lang: str = "en"):
+    """Lazy tafsir endpoint — called only when user clicks the tafsir button."""
+    from services.quran_service import _fetch_tafsir_en, _fetch_tafsir_ar
+    try:
+        if lang == "ar":
+            text = await _fetch_tafsir_ar(verse_key)
+        else:
+            text = await _fetch_tafsir_en(verse_key)
+        return {"verse_key": verse_key, "lang": lang, "tafsir": text or ""}
+    except Exception as e:
+        raise HTTPException(500, f"Could not fetch tafsir: {e}")

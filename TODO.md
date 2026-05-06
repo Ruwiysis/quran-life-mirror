@@ -1,14 +1,12 @@
-# Fix Bookmark Save Error - Progress Tracker
+# Fix API Errors Task
+Current Working Directory: c:/Users/rowan/Downloads/quran_life_mirror_v3/quran-life-mirror
 
-## Planned Steps:
-- [x] Step 1: Added local bookmarks table to database.py, created routers/local_bookmarks.py with POST/GET/DELETE /api/local/bookmark*, included in main.py.
-- [x] Step 2: Updated backend/routers/user.py: Added detailed logging (QF_API_BASE, URLs, responses), fallback to local save/fetch if QF fails/missing env.
-- [x] Step 3: Updated frontend VerseCard.js: Better error console/alert for local fallback.
-- [x] Step 4: Fixed database.py indentation. Backend now starts cleanly (logs show startup success).
+## Steps:
+- [x] Step 1: Add GET /api/search endpoint to backend/routers/search.py
+- [x] Step 2: Add array check and error handling to frontend/src/components/BookmarksPanel.js
+- [ ] Step 3: Test backend endpoints locally
+- [ ] Step 4: Deploy to Railway
+- [ ] Step 5: Verify fixes on production
 
-- [ ] Step 5: If QF env vars missing, guide .env setup from .env.example.
-- [ ] Step 6: Verify get/delete bookmarks work.
-- [ ] Step 7: attempt_completion once fixed.
-
-**Current: Starting Step 1**
+Progress: 2/5 completed (code fixes done)
 
