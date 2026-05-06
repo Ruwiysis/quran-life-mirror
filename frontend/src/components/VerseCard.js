@@ -12,6 +12,7 @@ const T = {
     didYouKnow: 'Did you know?', addNote: 'Add your own note...',
     saveBookmark: '+ Bookmark Verse', bookmarked: '✓ Bookmarked',
     tafsirLabel: '📖 Tafsir (Ibn Kathir)',
+    tafsirLoading: 'Loading tafsir...',
     howFeel: 'How does this make you feel?',
     loginToBookmark: 'Please log in to bookmark verses.',
   },
@@ -21,6 +22,7 @@ const T = {
     didYouKnow: 'هل تعلم؟', addNote: 'أضف ملاحظتك الشخصية...',
     saveBookmark: '+ حفظ الآية', bookmarked: '✓ تم الحفظ',
     tafsirLabel: '📖 تفسير ابن كثير',
+    tafsirLoading: 'جارٍ تحميل التفسير...',
     howFeel: 'كيف تشعر الآن؟',
     loginToBookmark: 'يرجى تسجيل الدخول لحفظ العلامات.',
   }
@@ -71,15 +73,34 @@ export default function VerseCard({ verse, situation, index, onBookmarkSaved }) 
   const [mood, setMood] = useState('reflective');
   const [hovered, setHovered] = useState(false);
   const [showTafsir, setShowTafsir] = useState(false);
+  const [tafsirText, setTafsirText] = useState(null);  // null = not loaded yet
+  const [tafsirLoading, setTafsirLoading] = useState(false);
   const [audio] = useState(() => verse.audio_url ? new Audio(verse.audio_url) : null);
 
   const fact = DID_YOU_KNOW[lang]?.[verse.verse_key];
-  const rawTafsir = isAr ? verse.tafsir_ar : verse.tafsir_en;
-  const tafsirText = isAr ? rawTafsir : (rawTafsir ? stripArabic(rawTafsir) : '');
-
   const MOODS = ['grateful', 'hopeful', 'reflective', 'at peace', 'still struggling'];
   const MOODS_AR = ['ممتنّ', 'متفائل', 'متأمّل', 'مطمئن', 'أحتاج مزيداً'];
   const fontFamily = isAr ? "'Noto Sans Arabic',sans-serif" : "'DM Sans',sans-serif";
+
+  const handleTafsir = async () => {
+    const next = !showTafsir;
+    setShowTafsir(next);
+    // Only fetch if opening and not already loaded
+    if (next && tafsirText === null && !tafsirLoading) {
+      setTafsirLoading(true);
+      try {
+        const { data } = await axios.get(
+          `${API}/api/verse/${verse.verse_key}/tafsir?lang=${lang}`
+        );
+        const raw = data.tafsir || '';
+        setTafsirText(isAr ? raw : stripArabic(raw));
+      } catch (e) {
+        setTafsirText('');
+      } finally {
+        setTafsirLoading(false);
+      }
+    }
+  };
 
   const handleSave = async () => {
     if (saved) return;
@@ -184,39 +205,41 @@ export default function VerseCard({ verse, situation, index, onBookmarkSaved }) 
         </div>
       )}
 
-      {tafsirText && (
-        <div style={{ marginBottom: '16px' }}>
-          <button onClick={() => setShowTafsir(p => !p)} style={{
-            background: 'none', border: 'none', cursor: 'pointer',
-            fontSize: '0.75rem', color: 'var(--gold)',
-            letterSpacing: '0.1em', textTransform: 'uppercase',
-            padding: 0, fontFamily, display: 'flex', alignItems: 'center', gap: '6px',
+      {/* Lazy tafsir — always show the button, fetch only on first open */}
+      <div style={{ marginBottom: '16px' }}>
+        <button onClick={handleTafsir} style={{
+          background: 'none', border: 'none', cursor: 'pointer',
+          fontSize: '0.75rem', color: 'var(--gold)',
+          letterSpacing: '0.1em', textTransform: 'uppercase',
+          padding: 0, fontFamily, display: 'flex', alignItems: 'center', gap: '6px',
+        }}>
+          <span>{showTafsir ? '▾' : '▸'}</span>
+          {t.tafsirLabel}
+        </button>
+        {showTafsir && (
+          <div style={{
+            marginTop: '10px', background: 'var(--gold-dim)',
+            border: `1px solid var(--border)`, borderRadius: '10px',
+            padding: '18px 20px', minHeight: '60px',
           }}>
-            <span>{showTafsir ? '▾' : '▸'}</span>
-            {t.tafsirLabel}
-          </button>
-          {showTafsir && (
-            <div style={{
-              marginTop: '10px', background: 'var(--gold-dim)',
-              border: `1px solid var(--border)`, borderRadius: '10px',
-              padding: '18px 20px',
-              minHeight: '180px',
-              maxHeight: 'none',
-              height: 'auto',
-              overflowY: 'visible',
-            }}>
+            {tafsirLoading ? (
+              <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', fontFamily, margin: 0, fontStyle: 'italic' }}>
+                {t.tafsirLoading}
+              </p>
+            ) : (
               <p style={{
                 fontSize: '0.95rem', color: 'var(--text)',
                 lineHeight: 1.95, margin: 0, fontFamily,
                 direction: isAr ? 'rtl' : 'ltr',
                 textAlign: isAr ? 'right' : 'left',
-                overflowWrap: 'anywhere',
-                whiteSpace: 'pre-wrap',
-              }}>{tafsirText}</p>
-            </div>
-          )}
-        </div>
-      )}
+                overflowWrap: 'anywhere', whiteSpace: 'pre-wrap',
+              }}>
+                {tafsirText || '—'}
+              </p>
+            )}
+          </div>
+        )}
+      </div>
 
       <div style={{ height: '1px', background: `linear-gradient(90deg,transparent,var(--border),transparent)`, margin: '16px 0' }} />
 
