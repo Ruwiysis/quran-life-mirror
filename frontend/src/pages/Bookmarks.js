@@ -4,7 +4,7 @@ import { LangContext } from '../App';
 import { useAuth } from '../context/AuthContext';
 import VerseCard from '../components/VerseCard';
 
-const API = import.meta.env.VITE_API_URL || '';
+const API = process.env.REACT_APP_API_URL || '';
 
 export default function Bookmarks() {
   const { lang } = useContext(LangContext);
@@ -29,7 +29,15 @@ export default function Bookmarks() {
         const verseMap = {};
         data.forEach(b => {
           if (b.verse) {
-            verseMap[b.verse_key] = b.verse;
+            verseMap[b.verse_key] = {
+              verse_key: b.verse_key,
+              surah_name: b.verse.surah_name || b.verse_key.split(':')[0],
+              arabic_text: b.verse.arabic || b.verse.arabic_text || '',
+              translation: b.verse.translation || '',
+              audio_url: b.verse.audio_url || '',
+              reflection: b.verse.reflection || '',
+              relevance_score: 1.0,
+            };
           }
         });
         setVerses(verseMap);

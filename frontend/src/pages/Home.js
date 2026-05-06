@@ -28,17 +28,19 @@ export default function Home() {
     setBookmarkRefresh(prev => prev + 1);
   };
 
-  // Fetch bookmark count periodically
+  // Fetch bookmark count immediately on login/refresh, then poll every 30s
   useEffect(() => {
     if (!isLoggedIn || !token) return;
-    const interval = setInterval(async () => {
+    const fetchCount = async () => {
       try {
         const { data } = await axios.get((process.env.REACT_APP_API_URL || '') + '/api/user/bookmarks', {
           headers: { Authorization: `Bearer ${token}` }
         });
         setBookmarkCount(data.length);
       } catch {}
-    }, 5000);
+    };
+    fetchCount(); // immediate on mount/login
+    const interval = setInterval(fetchCount, 30000);
     return () => clearInterval(interval);
   }, [isLoggedIn, token]);
 
