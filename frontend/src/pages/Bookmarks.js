@@ -4,7 +4,7 @@ import { LangContext } from '../App';
 import { useAuth } from '../context/AuthContext';
 import VerseCard from '../components/VerseCard';
 
-const API = process.env.REACT_APP_API_URL || '';
+const API = import.meta.env.VITE_API_URL || '';
 
 export default function Bookmarks() {
   const { lang } = useContext(LangContext);
@@ -29,18 +29,7 @@ export default function Bookmarks() {
         const verseMap = {};
         data.forEach(b => {
           if (b.verse) {
-            // Normalize fields to match what VerseCard expects
-            verseMap[b.verse_key] = {
-              verse_key: b.verse_key,
-              surah_name: b.verse.surah_name || b.verse_key.split(':')[0],
-              arabic_text: b.verse.arabic || b.verse.arabic_text || '',
-              translation: b.verse.translation || '',
-              audio_url: b.verse.audio_url || '',
-              reflection: b.verse.reflection || '',
-              relevance_score: b.verse.relevance_score || 1.0,
-              tafsir_en: b.verse.tafsir_en || null,
-              tafsir_ar: b.verse.tafsir_ar || null,
-            };
+            verseMap[b.verse_key] = b.verse;
           }
         });
         setVerses(verseMap);
@@ -97,7 +86,7 @@ export default function Bookmarks() {
             ── {surah} ──
           </div>
           {surahVerses.map((verse, i) => (
-            <VerseCard key={verse.verse_key} verse={verse} index={i} lang={lang} />
+            <VerseCard key={verse.verse_key} verse={verse} index={i} lang={lang} readOnly={true} />
           ))}
         </div>
       ))}
