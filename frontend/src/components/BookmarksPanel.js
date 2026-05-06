@@ -16,7 +16,8 @@ export default function BookmarksPanel({ isOpen, onClose, refreshTrigger }) {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (!isOpen || !token) return;
+    // Pre-load on mount if logged in so bookmarks are ready when panel opens
+    if (!token) return;
     setLoading(true);
     const fetchBookmarks = async () => {
       try {
@@ -40,7 +41,7 @@ export default function BookmarksPanel({ isOpen, onClose, refreshTrigger }) {
       }
     };
     fetchBookmarks();
-  }, [isOpen, token, refreshTrigger]);
+  }, [token, refreshTrigger]);
 
   const groupedVerses = {};
   Object.values(verses).forEach(v => {
@@ -127,7 +128,7 @@ export default function BookmarksPanel({ isOpen, onClose, refreshTrigger }) {
                 </div>
                 {surahVerses.map((verse, i) => (
                   <div key={verse.verse_key} style={{ marginBottom: '16px' }}>
-                    <VerseCard verse={verse} index={i} lang={lang} readOnly={true} />
+                    <VerseCard verse={verse} index={i} lang={lang} />
                   </div>
                 ))}
               </div>
