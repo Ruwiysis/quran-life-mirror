@@ -3,6 +3,7 @@ import axios from 'axios';
 import { format } from 'date-fns';
 import { arSA } from 'date-fns/locale';
 import { LangContext } from '../App';
+import { useAuth } from '../context/AuthContext';
 import { T, DID_YOU_KNOW } from '../translations';
 
 const MOOD_EMOJI = {
@@ -41,7 +42,7 @@ function EntryCard({ entry, onUpdate, onDelete, lang, isFromQF }) {
       if (isFromQF) {
         alert(t.editingQF);
       } else {
-        const { data } = await axios.patch(`/api/journal/${entry.id}`, { personal_note: noteText });
+        const { data } = await axios.patch(`${process.env.REACT_APP_API_URL || ''}/api/journal/${entry.id}`, { personal_note: noteText });
         onUpdate(data);
         setEditing(false);
       }
@@ -61,35 +62,35 @@ function EntryCard({ entry, onUpdate, onDelete, lang, isFromQF }) {
   return (
     <div
       style={{
-        background: 'var(--ink-soft)',
-        border: '1px solid var(--border)', borderRadius: '20px',
+        background: 'linear-gradient(135deg,rgba(20,25,41,0.95) 0%,rgba(15,20,35,0.98) 100%)',
+        border: '1px solid rgba(201,168,76,0.18)', borderRadius: '20px',
         marginBottom: '24px', overflow: 'hidden',
-        boxShadow: 'var(--shadow-md)',
+        boxShadow: '0 4px 30px rgba(0,0,0,0.3)',
         direction: isAr ? 'rtl' : 'ltr',
         opacity: isFromQF ? 0.95 : 1,
         fontFamily,
       }}
-      onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--gold)'}
-      onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border)'}
+      onMouseEnter={e => e.currentTarget.style.borderColor = 'rgba(201,168,76,0.35)'}
+      onMouseLeave={e => e.currentTarget.style.borderColor = 'rgba(201,168,76,0.18)'}
     >
       {/* Top bar */}
       <div style={{
         background: moodColor, padding: '14px 28px',
-        borderBottom: `1px solid var(--border)`,
+        borderBottom: '1px solid rgba(201,168,76,0.1)',
         display: 'flex', justifyContent: 'space-between',
         alignItems: 'center', flexWrap: 'wrap', gap: '8px',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <span style={{ fontSize: '1.2rem' }}>{moodEmoji}</span>
-          <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', letterSpacing: '0.1em', textTransform: 'uppercase', fontFamily }}>
+          <span style={{ fontSize: '0.75rem', color: 'rgba(245,239,230,0.5)', letterSpacing: '0.1em', textTransform: 'uppercase', fontFamily }}>
             {moodLabel}
           </span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', letterSpacing: '0.1em', fontFamily }}>
+          <span style={{ fontSize: '0.72rem', color: 'rgba(201,168,76,0.6)', letterSpacing: '0.1em', fontFamily }}>
             {formattedDate}
           </span>
-          <span style={{ background: 'var(--gold-dim)', color: 'var(--gold)', borderRadius: '12px', padding: '2px 10px', fontSize: '0.72rem', fontFamily: 'monospace' }}>
+          <span style={{ background: 'rgba(201,168,76,0.12)', color: '#c9a84c', borderRadius: '12px', padding: '2px 10px', fontSize: '0.72rem', fontFamily: 'monospace' }}>
             {entry.verse_key}
           </span>
           {!isFromQF && (
@@ -107,14 +108,14 @@ function EntryCard({ entry, onUpdate, onDelete, lang, isFromQF }) {
 
         {/* Situation */}
         <div style={{ marginBottom: '20px' }}>
-          <div style={{ fontSize: '0.68rem', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: '8px', fontFamily }}>
+          <div style={{ fontSize: '0.68rem', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'rgba(245,239,230,0.3)', marginBottom: '8px', fontFamily }}>
             {t.situation}
           </div>
           <p style={{
-            fontSize: '0.92rem', color: 'var(--text-secondary)',
+            fontSize: '0.92rem', color: 'rgba(245,239,230,0.55)',
             fontStyle: 'italic', lineHeight: 1.7,
-            borderLeft: isAr ? 'none' : `2px solid var(--border)`,
-            borderRight: isAr ? `2px solid var(--border)` : 'none',
+            borderLeft: isAr ? 'none' : '2px solid rgba(201,168,76,0.2)',
+            borderRight: isAr ? '2px solid rgba(201,168,76,0.2)' : 'none',
             paddingLeft: isAr ? 0 : 14, paddingRight: isAr ? 14 : 0,
             fontFamily,
           }}>
@@ -126,9 +127,9 @@ function EntryCard({ entry, onUpdate, onDelete, lang, isFromQF }) {
         {entry.arabic_text && (
           <div style={{
             fontFamily: "'Amiri', serif", direction: 'rtl', textAlign: 'right',
-            fontSize: '1.5rem', lineHeight: 2.1, color: 'var(--text)',
-            padding: '16px 20px', background: 'var(--gold-dim)',
-            borderRadius: '10px', borderRight: `3px solid var(--gold)`,
+            fontSize: '1.5rem', lineHeight: 2.1, color: 'rgba(245,239,230,0.9)',
+            padding: '16px 20px', background: 'rgba(201,168,76,0.05)',
+            borderRadius: '10px', borderRight: '3px solid rgba(201,168,76,0.35)',
             marginBottom: '14px',
           }}>
             {entry.arabic_text}
@@ -140,7 +141,7 @@ function EntryCard({ entry, onUpdate, onDelete, lang, isFromQF }) {
           <p style={{
             fontFamily: "'Cormorant Garamond', serif",
             fontSize: '1.08rem', fontStyle: 'italic',
-            color: 'var(--text-secondary)', lineHeight: 1.75, marginBottom: '16px',
+            color: 'rgba(245,239,230,0.7)', lineHeight: 1.75, marginBottom: '16px',
           }}>
             "{entry.translation}"
           </p>
@@ -149,10 +150,10 @@ function EntryCard({ entry, onUpdate, onDelete, lang, isFromQF }) {
         {/* Reflection */}
         {entry.reflection && (
           <div style={{ marginBottom: '16px' }}>
-            <div style={{ fontSize: '0.68rem', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--gold)', marginBottom: '8px', fontFamily }}>
+            <div style={{ fontSize: '0.68rem', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'rgba(201,168,76,0.5)', marginBottom: '8px', fontFamily }}>
               {t.reflection}
             </div>
-            <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: 1.75, fontFamily }}>
+            <p style={{ fontSize: '0.9rem', color: 'rgba(245,239,230,0.6)', lineHeight: 1.75, fontFamily }}>
               {entry.reflection}
             </p>
           </div>
@@ -161,13 +162,13 @@ function EntryCard({ entry, onUpdate, onDelete, lang, isFromQF }) {
         {/* Quran Insight / Did You Know */}
         {fact && (
           <div style={{
-            background: 'var(--gold-dim)', border: `1px solid var(--border)`,
+            background: 'rgba(100,120,200,0.08)', border: '1px solid rgba(100,120,200,0.15)',
             borderRadius: '10px', padding: '14px 18px', marginBottom: '16px',
           }}>
-            <div style={{ fontSize: '0.68rem', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--gold)', marginBottom: '6px', fontFamily }}>
+            <div style={{ fontSize: '0.68rem', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(150,170,255,0.6)', marginBottom: '6px', fontFamily }}>
               {t.quranInsight}
             </div>
-            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.7, fontFamily }}>
+            <p style={{ fontSize: '0.85rem', color: 'rgba(245,239,230,0.55)', lineHeight: 1.7, fontFamily }}>
               {fact}
             </p>
           </div>
@@ -175,15 +176,15 @@ function EntryCard({ entry, onUpdate, onDelete, lang, isFromQF }) {
 
         {/* Personal note (local only) */}
         {!isFromQF && (
-          <div style={{ borderTop: `1px solid var(--border)`, paddingTop: '16px' }}>
+          <div style={{ borderTop: '1px solid rgba(201,168,76,0.1)', paddingTop: '16px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-              <span style={{ fontSize: '0.68rem', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--text-secondary)', fontFamily }}>
+              <span style={{ fontSize: '0.68rem', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'rgba(201,168,76,0.4)', fontFamily }}>
                 {t.yourNote}
               </span>
               {!editing && (
                 <button
                   onClick={() => setEditing(true)}
-                  style={{ fontSize: '0.75rem', color: 'var(--gold)', background: 'transparent', border: 'none', cursor: 'pointer', fontFamily }}
+                  style={{ fontSize: '0.75rem', color: 'rgba(201,168,76,0.6)', background: 'transparent', border: 'none', cursor: 'pointer', fontFamily }}
                 >
                   {entry.personal_note ? t.edit : t.addNote}
                 </button>
@@ -198,9 +199,9 @@ function EntryCard({ entry, onUpdate, onDelete, lang, isFromQF }) {
                   placeholder={t.editNote}
                   style={{
                     width: '100%', minHeight: '80px',
-                    background: `rgba(var(--text-rgb), 0.05)`,
-                    border: `1px solid var(--border)`, borderRadius: '8px',
-                    padding: '10px 14px', color: 'var(--text)',
+                    background: 'rgba(10,15,30,0.6)',
+                    border: '1px solid rgba(201,168,76,0.25)', borderRadius: '8px',
+                    padding: '10px 14px', color: '#f5efe6',
                     fontSize: '0.88rem', fontFamily, resize: 'vertical', outline: 'none',
                     direction: isAr ? 'rtl' : 'ltr',
                   }}
@@ -208,13 +209,13 @@ function EntryCard({ entry, onUpdate, onDelete, lang, isFromQF }) {
                 <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
                   <button
                     onClick={handleSave} disabled={saving}
-                    style={{ fontSize: '0.8rem', padding: '7px 18px', borderRadius: '15px', background: 'var(--gold-dim)', color: 'var(--gold)', border: 'none', cursor: 'pointer', fontFamily }}
+                    style={{ fontSize: '0.8rem', padding: '7px 18px', borderRadius: '15px', background: 'rgba(201,168,76,0.2)', color: '#c9a84c', border: 'none', cursor: 'pointer', fontFamily }}
                   >
                     {saving ? '...' : t.saveNote}
                   </button>
                   <button
                     onClick={() => { setEditing(false); setNoteText(entry.personal_note || ''); }}
-                    style={{ fontSize: '0.8rem', padding: '7px 18px', borderRadius: '15px', background: `rgba(var(--text-rgb), 0.06)`, color: 'var(--text-secondary)', border: 'none', cursor: 'pointer', fontFamily }}
+                    style={{ fontSize: '0.8rem', padding: '7px 18px', borderRadius: '15px', background: 'rgba(245,239,230,0.06)', color: 'rgba(245,239,230,0.5)', border: 'none', cursor: 'pointer', fontFamily }}
                   >
                     {t.cancel}
                   </button>
@@ -223,7 +224,7 @@ function EntryCard({ entry, onUpdate, onDelete, lang, isFromQF }) {
             ) : (
               <p style={{
                 fontSize: '0.9rem',
-                color: entry.personal_note ? 'var(--text-secondary)' : `rgba(var(--text-rgb), 0.4)`,
+                color: entry.personal_note ? 'rgba(245,239,230,0.65)' : 'rgba(245,239,230,0.2)',
                 lineHeight: 1.7, fontStyle: entry.personal_note ? 'normal' : 'italic', fontFamily,
               }}>
                 {entry.personal_note || t.noNote}
@@ -233,7 +234,7 @@ function EntryCard({ entry, onUpdate, onDelete, lang, isFromQF }) {
         )}
 
         {isFromQF && (
-          <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontStyle: 'italic', marginTop: '12px', textAlign: 'center', fontFamily }}>
+          <div style={{ fontSize: '0.75rem', color: 'rgba(201,168,76,0.5)', fontStyle: 'italic', marginTop: '12px', textAlign: 'center', fontFamily }}>
             ✓ {t.localData}
           </div>
         )}
@@ -248,17 +249,35 @@ export default function Journal() {
   const t = T[lang].journal;
   const isAr = lang === 'ar';
   const fontFamily = isAr ? "'Noto Sans Arabic', 'DM Sans', sans-serif" : "'DM Sans', sans-serif";
+  const { isLoggedIn, token } = useAuth();
 
   const [entries, setEntries] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [streak, setStreak] = useState({ current_streak: 0, longest_streak: 0, total_days: 0 });
 
   useEffect(() => {
     const fetchData = async () => {
-      setLoading(true);
       try {
-        // Local journal entries only
-        const { data: localData } = await axios.get((import.meta.env.VITE_API_URL || '') + '/api/journal');
-        setEntries(localData);
+        if (isLoggedIn && token) {
+          try {
+            const { data } = await axios.get((process.env.REACT_APP_API_URL || '') + '/api/user/journal', {
+              headers: { Authorization: `Bearer ${token}` },
+            });
+            try {
+              const streakData = await axios.get((process.env.REACT_APP_API_URL || '') + '/api/user/streaks', {
+                headers: { Authorization: `Bearer ${token}` },
+              });
+              setStreak(streakData.data);
+            } catch { /* silent */ }
+            setEntries(data);
+          } catch {
+            const { data } = await axios.get((process.env.REACT_APP_API_URL || '') + '/api/journal');
+            setEntries(data);
+          }
+        } else {
+          const { data } = await axios.get((process.env.REACT_APP_API_URL || '') + '/api/journal');
+          setEntries(data);
+        }
       } catch (e) {
         console.error('Error fetching journal:', e);
       } finally {
@@ -266,23 +285,18 @@ export default function Journal() {
       }
     };
     fetchData();
-  }, []);
+  }, [isLoggedIn, token]);
 
   const handleUpdate = (updated) => setEntries(prev => prev.map(e => e.id === updated.id ? updated : e));
   const handleDelete = async (id) => {
-    try {
-      await axios.delete((import.meta.env.VITE_API_URL || '') + `/api/journal/${id}`);
-      setEntries(prev => prev.filter(e => e.id !== id));
-    } catch (error) {
-      console.error('Error deleting entry:', error);
-      alert(t.saveError || 'Failed to delete entry');
-    }
+    await axios.delete(`${process.env.REACT_APP_API_URL || ''}/api/journal/${id}`);
+    setEntries(prev => prev.filter(e => e.id !== id));
   };
 
   const uniqueVerses = [...new Set(entries.map(e => e.verse_key))].length;
-  const daysJourney = entries.length > 0
+  const daysJourney = streak.current_streak || (entries.length > 0
     ? Math.max(1, Math.ceil((Date.now() - new Date(entries[entries.length - 1].created_at)) / 86400000))
-    : 0;
+    : 0);
   const streakMsg = entries.length > 0 ? t.streakMsg(daysJourney) : '';
 
   // Month/year label with locale
@@ -305,25 +319,25 @@ export default function Journal() {
         <span style={{
           display: 'inline-block', fontSize: '0.72rem', fontWeight: 500,
           letterSpacing: '0.2em', textTransform: 'uppercase',
-          color: 'var(--gold)', marginBottom: '12px', fontFamily,
+          color: 'rgba(201,168,76,0.7)', marginBottom: '12px', fontFamily,
         }}>
           {t.eyebrow}
         </span>
         <h1 style={{
           fontFamily: "'Cormorant Garamond', serif",
           fontSize: 'clamp(2rem,5vw,3rem)', fontWeight: 300,
-          color: 'var(--text)', lineHeight: 1.2, marginBottom: '10px',
+          color: '#f5efe6', lineHeight: 1.2, marginBottom: '10px',
         }}>
           {t.h1a}<br />
-          <span style={{ color: 'var(--gold)' }}>{t.h1b}</span>
+          <span style={{ color: '#c9a84c' }}>{t.h1b}</span>
         </h1>
-        <p style={{ fontSize: '0.95rem', color: 'var(--text-secondary)', fontFamily }}>
+        <p style={{ fontSize: '0.95rem', color: 'rgba(245,239,230,0.4)', fontFamily }}>
           {t.subtitle}
         </p>
       </div>
 
       {/* Stats */}
-      {entries.length > 0 && (
+      {!loading && entries.length > 0 && (
         <div style={{ display: 'flex', gap: '16px', marginBottom: '32px', flexWrap: 'wrap' }} className="fade-up-delay-1">
           {[
             { num: entries.length, label: t.reflections },
@@ -331,13 +345,13 @@ export default function Journal() {
             { num: daysJourney, label: t.dayJourney },
           ].map(s => (
             <div key={s.label} style={{
-              background: 'var(--gold-dim)', border: `1px solid var(--border)`,
+              background: 'rgba(201,168,76,0.08)', border: '1px solid rgba(201,168,76,0.2)',
               borderRadius: '14px', padding: '18px 24px', flex: '1', minWidth: '110px', textAlign: 'center',
             }}>
-              <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '2.2rem', fontWeight: 300, color: 'var(--gold)', lineHeight: 1 }}>
+              <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '2.2rem', fontWeight: 300, color: '#c9a84c', lineHeight: 1 }}>
                 {s.num}
               </div>
-              <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', letterSpacing: '0.1em', textTransform: 'uppercase', marginTop: '6px', fontFamily }}>
+              <div style={{ fontSize: '0.7rem', color: 'rgba(245,239,230,0.4)', letterSpacing: '0.1em', textTransform: 'uppercase', marginTop: '6px', fontFamily }}>
                 {s.label}
               </div>
             </div>
@@ -347,26 +361,26 @@ export default function Journal() {
 
       {/* Streak */}
       {streakMsg && (
-        <div style={{ textAlign: 'center', marginBottom: '32px', fontSize: '0.9rem', color: 'var(--gold)', fontStyle: 'italic', fontFamily }}>
+        <div style={{ textAlign: 'center', marginBottom: '32px', fontSize: '0.9rem', color: 'rgba(201,168,76,0.7)', fontStyle: 'italic', fontFamily }}>
           {streakMsg}
         </div>
       )}
 
       {/* Chapter divider */}
       {entries.length > 0 && (
-        <div style={{ textAlign: 'center', marginBottom: '32px', fontSize: '0.72rem', letterSpacing: '0.25em', textTransform: 'uppercase', color: 'var(--text-secondary)', fontFamily }}>
+        <div style={{ textAlign: 'center', marginBottom: '32px', fontSize: '0.72rem', letterSpacing: '0.25em', textTransform: 'uppercase', color: 'rgba(245,239,230,0.2)', fontFamily }}>
           ✦ ─────── {t.journey} ─────── ✦
         </div>
       )}
 
       {/* Loading / Empty */}
       {loading && (
-        <div style={{ textAlign: 'center', padding: '80px 0', color: 'var(--text-secondary)', fontFamily: isAr ? "'Noto Sans Arabic', serif" : "'Cormorant Garamond', serif", fontSize: '1.1rem', fontStyle: 'italic' }}>
+        <div style={{ textAlign: 'center', padding: '80px 0', color: 'rgba(245,239,230,0.3)', fontFamily: isAr ? "'Noto Sans Arabic', serif" : "'Cormorant Garamond', serif", fontSize: '1.1rem', fontStyle: 'italic' }}>
           {t.loading}
         </div>
       )}
       {!loading && entries.length === 0 && (
-        <div style={{ textAlign: 'center', padding: '80px 0', color: 'var(--text-secondary)', fontFamily: isAr ? "'Noto Sans Arabic', serif" : "'Cormorant Garamond', serif", fontSize: '1.1rem', fontStyle: 'italic' }}>
+        <div style={{ textAlign: 'center', padding: '80px 0', color: 'rgba(245,239,230,0.3)', fontFamily: isAr ? "'Noto Sans Arabic', serif" : "'Cormorant Garamond', serif", fontSize: '1.1rem', fontStyle: 'italic' }}>
           {t.empty}
         </div>
       )}
@@ -376,7 +390,7 @@ export default function Journal() {
         <div key={entry.id} className="fade-up" style={{ animationDelay: `${i * 0.08}s` }}>
           {/* Month separator */}
           {(i === 0 || formatMonthYear(entries[i - 1].created_at) !== formatMonthYear(entry.created_at)) && (
-            <div style={{ textAlign: 'center', margin: '24px 0 20px', fontSize: '0.72rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--text-secondary)', fontFamily }}>
+            <div style={{ textAlign: 'center', margin: '24px 0 20px', fontSize: '0.72rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: 'rgba(201,168,76,0.4)', fontFamily }}>
               ── {formatMonthYear(entry.created_at)} ──
             </div>
           )}
@@ -385,7 +399,7 @@ export default function Journal() {
             onUpdate={handleUpdate}
             onDelete={handleDelete}
             lang={lang}
-            isFromQF={entry.isFromQF || false}
+            isFromQF={entry.source === 'qf'}
           />
         </div>
       ))}

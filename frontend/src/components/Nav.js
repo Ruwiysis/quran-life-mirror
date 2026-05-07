@@ -11,15 +11,13 @@ export default function Nav() {
   const t = T[lang].nav;
   const isAr = lang === 'ar';
 
-  const navLinks = [['/', t.reflect], ['/journal', t.journal]];
-
   return (
     <nav style={{
       position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100,
       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
       padding: '18px 40px',
-      background: 'var(--bg)',
-      borderBottom: '1px solid var(--border)',
+      background: 'linear-gradient(180deg,rgba(10,15,30,0.97) 0%,transparent 100%)',
+      backdropFilter: 'blur(8px)',
       direction: isAr ? 'rtl' : 'ltr',
     }}>
       <Link
@@ -27,18 +25,18 @@ export default function Nav() {
         style={{
           fontFamily: "'Cormorant Garamond',serif",
           fontSize: '1.3rem', fontWeight: 400,
-          color: 'var(--gold)', textDecoration: 'none', letterSpacing: '0.05em',
+          color: '#c9a84c', textDecoration: 'none', letterSpacing: '0.05em',
         }}
       >
         {t.brand}
       </Link>
 
       <div style={{ display: 'flex', gap: '24px', alignItems: 'center' }}>
-        {navLinks.map(([path, label]) => (
+        {[['/', t.reflect], ['/journal', t.journal]].map(([path, label]) => (
           <Link key={path} to={path} style={{
             fontFamily: "'DM Sans',sans-serif",
             fontSize: '0.85rem', fontWeight: 400,
-            color: pathname === path ? 'var(--gold)' : 'var(--muted)',
+            color: pathname === path ? '#c9a84c' : 'rgba(245,239,230,0.55)',
             textDecoration: 'none', letterSpacing: '0.08em',
             textTransform: 'uppercase', transition: 'color 0.2s',
           }}>
@@ -49,64 +47,62 @@ export default function Nav() {
         <button
           onClick={() => setLang(lang === 'en' ? 'ar' : 'en')}
           style={{
-            background: 'var(--gold-dim)',
-            border: '1px solid var(--border)',
-            color: 'var(--gold)', borderRadius: '20px', padding: '5px 14px',
+            background: 'rgba(201,168,76,0.1)',
+            border: '1px solid rgba(201,168,76,0.3)',
+            color: '#c9a84c', borderRadius: '20px', padding: '5px 14px',
             fontSize: '0.8rem', cursor: 'pointer',
             fontFamily: isAr ? "'Noto Sans Arabic',sans-serif" : "'DM Sans',sans-serif",
             transition: 'all 0.2s',
           }}
         >
           {t.toggle}
-        </button>
 
-        {/* Cute Theme Toggle */}
+
+        {/* Theme Toggle */}
         <button
           onClick={toggleTheme}
           style={{
             position: 'relative',
             width: '44px', height: '24px',
-            background: 'var(--gold-dim)',
-            border: '1px solid var(--border)',
+            background: 'rgba(201,168,76,0.1)',
+            border: '1px solid rgba(201,168,76,0.3)',
             borderRadius: '12px',
             cursor: 'pointer',
             padding: 0,
             display: 'flex',
             alignItems: 'center',
             transition: 'all 0.3s ease',
-            boxShadow: 'var(--glow)',
           }}
           title="Toggle theme"
         >
           <span style={{
             position: 'absolute',
+            left: '4px',
             fontSize: '0.75rem',
-            transition: 'opacity 0.3s ease, transform 0.3s ease',
-            opacity: theme === 'dark' ? 0.3 : 1,
-            transform: theme === 'dark' ? 'translateX(4px)' : 'translateX(0)',
+            transition: 'opacity 0.3s ease',
+            opacity: theme === 'light' ? 1 : 0.3,
           }}>
             ☀️
           </span>
           <span style={{
             position: 'absolute',
-            fontSize: '0.75rem',
             right: '4px',
-            transition: 'opacity 0.3s ease, transform 0.3s ease',
-            opacity: theme === 'light' ? 0.3 : 1,
-            transform: theme === 'light' ? 'translateX(-4px)' : 'translateX(0)',
+            fontSize: '0.75rem',
+            transition: 'opacity 0.3s ease',
+            opacity: theme === 'dark' ? 1 : 0.3,
           }}>
             🌙
           </span>
           <div style={{
             position: 'absolute',
-            left: theme === 'dark' ? '4px' : '20px',
+            left: theme === 'light' ? '4px' : '20px',
             width: '16px', height: '16px',
-            background: 'var(--gold)',
+            background: '#c9a84c',
             borderRadius: '50%',
             transition: 'left 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
             boxShadow: '0 2px 8px rgba(201,168,76,0.4)',
           }} />
-        </button>
+        </button>        </button>
       </div>
     </nav>
   );
