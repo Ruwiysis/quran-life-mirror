@@ -249,7 +249,7 @@ export default function Journal() {
   const t = T[lang].journal;
   const isAr = lang === 'ar';
   const fontFamily = isAr ? "'Noto Sans Arabic', 'DM Sans', sans-serif" : "'DM Sans', sans-serif";
-  const { isLoggedIn, token } = useAuth();
+  const { isLoggedIn, token, loading: authLoading } = useAuth();
 
   const [entries, setEntries] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -258,6 +258,8 @@ export default function Journal() {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        if (authLoading) return;
+
         if (isLoggedIn && token) {
           try {
             const { data } = await axios.get((process.env.REACT_APP_API_URL || '') + '/api/user/journal', {
@@ -271,6 +273,7 @@ export default function Journal() {
             } catch { /* silent */ }
             setEntries(data);
           } catch {
+            // If user endpoint fails (e.g., auth), fall back to public journal only
             const { data } = await axios.get((process.env.REACT_APP_API_URL || '') + '/api/journal');
             setEntries(data);
           }
@@ -284,8 +287,10 @@ export default function Journal() {
         setLoading(false);
       }
     };
+
+    setLoading(true);
     fetchData();
-  }, [isLoggedIn, token]);
+  }, [isLoggedIn, token, authLoading]);
 
   const handleUpdate = (updated) => setEntries(prev => prev.map(e => e.id === updated.id ? updated : e));
   const handleDelete = async (id) => {

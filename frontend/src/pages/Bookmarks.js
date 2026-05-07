@@ -9,7 +9,7 @@ const API = process.env.REACT_APP_API_URL || '';
 export default function Bookmarks() {
   const { lang } = useContext(LangContext);
   const isAr = lang === 'ar';
-  const { isLoggedIn, token } = useAuth();
+  const { isLoggedIn, token, loading: authLoading } = useAuth();
   const fontFamily = isAr ? "'Noto Sans Arabic',sans-serif" : "'DM Sans',sans-serif";
 
   const [verses, setVerses] = useState({});
@@ -17,10 +17,12 @@ export default function Bookmarks() {
   const [error, setError] = useState('');
 
   useEffect(() => {
+    if (authLoading) return;
     if (!isLoggedIn || !token) {
       setLoading(false);
       return;
     }
+
     const fetchBookmarks = async () => {
       try {
         const { data } = await axios.get(API + '/api/user/bookmarks-with-verses', {
@@ -47,8 +49,10 @@ export default function Bookmarks() {
         setLoading(false);
       }
     };
+
+    setLoading(true);
     fetchBookmarks();
-  }, [isLoggedIn, token]);
+  }, [isLoggedIn, token, authLoading]);
 
   const groupedVerses = {};
   Object.values(verses).forEach(v => {

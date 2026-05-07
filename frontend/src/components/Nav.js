@@ -16,8 +16,13 @@ export default function Nav() {
       position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100,
       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
       padding: '18px 40px',
-      background: 'linear-gradient(180deg,rgba(10,15,30,0.97) 0%,transparent 100%)',
+      background: theme === 'light'
+        ? 'rgba(250,247,240,0.98)'
+        : 'linear-gradient(180deg,rgba(10,15,30,0.97) 0%,transparent 100%)',
       backdropFilter: 'blur(8px)',
+      borderBottom: theme === 'light'
+        ? '1px solid rgba(0,0,0,0.06)'
+        : '1px solid rgba(255,255,255,0.04)',
       direction: isAr ? 'rtl' : 'ltr',
     }}>
       <Link
@@ -54,9 +59,10 @@ export default function Nav() {
             fontFamily: isAr ? "'Noto Sans Arabic',sans-serif" : "'DM Sans',sans-serif",
             transition: 'all 0.2s',
           }}
+          title="Toggle language"
         >
           {t.toggle}
-
+        </button>
 
         {/* Theme Toggle */}
         <button
@@ -102,7 +108,7 @@ export default function Nav() {
             transition: 'left 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
             boxShadow: '0 2px 8px rgba(201,168,76,0.4)',
           }} />
-        </button>        </button>
+        </button>
       </div>
     </nav>
   );

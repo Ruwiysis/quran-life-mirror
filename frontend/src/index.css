@@ -54,6 +54,13 @@ body::before{
     radial-gradient(ellipse 40% 30% at 80% 80%, rgba(100,80,200,0.03) 0%,transparent 60%);
   pointer-events:none;z-index:0;
 }
+
+/* Light theme: remove the "dark cloud" overlay by tinting gradients much lighter */
+:root[data-theme="light"] body::before{
+  background-image:
+    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(201,168,76,0.18) 0%,transparent 70%),
+    radial-gradient(ellipse 40% 30% at 80% 80%, rgba(100,80,200,0.01) 0%,transparent 60%);
+}
 #root{position:relative;z-index:1;}
 h1,h2,h3{font-family:'Cormorant Garamond',serif;font-weight:300;}
 .arabic{font-family:'Amiri',serif;direction:rtl;text-align:right;line-height:2;}
