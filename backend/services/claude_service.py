@@ -1,167 +1,155 @@
-from groq import Groq
 import os
+import json
 import re
-from dotenv import load_dotenv
-load_dotenv()
+from anthropic import Anthropic
 
-client = Groq(api_key=os.getenv("GROQ_API_KEY"))
-MODEL = "llama-3.1-8b-instant"
+ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
+MODEL = "claude-sonnet-4-20250514"
 
-def detect_language(text: str) -> str:
-    arabic_chars = sum(1 for c in text if "\u0600" <= c <= "\u06FF")
-    return "ar" if arabic_chars > len(text) * 0.2 else "en"
+_client = Anthropic(api_key=ANTHROPIC_API_KEY)
 
-def extract_verse_keys(raw: str) -> list:
+
+def _extract_json_array(text: str):
     """
-    Robustly extract verse keys like 2:153 or 2/153 from any LLM response,
-    ignoring all surrounding Arabic/English text, labels, and punctuation.
+    Extract a JSON array from model output. Accepts cases where the model
+    wraps/embeds JSON in surrounding text.
     """
-    pattern = r'\b(\d{1,3})[:/](\d{1,3})\b'
-    matches = re.findall(pattern, raw)
-    keys = []
-    for surah, ayah in matches:
-        s, a = int(surah), int(ayah)
-        if 1 <= s <= 114 and 1 <= a <= 300:
-            keys.append(f"{s}:{a}")
-    # Deduplicate while preserving order
-    seen = set()
-    result = []
-    for k in keys:
-        if k not in seen:
-            seen.add(k)
-            result.append(k)
-    return result
+    text = text.strip()
+    # Try direct parse first
+    try:
+        val = json.loads(text)
+        if isinstance(val, list):
+            return val
+    except Exception:
+        pass
 
-async def extract_themes(situation: str) -> str:
-    query = (
-        "Extract core spiritual themes from this situation as a 10-15 word "
-        "Quran search query. Return ONLY the query, nothing else.\n\nSituation: "
-        + situation
+    # Fallback: find first [...] block
+    m = re.search(r"\[[\s\S]*\]", text)
+    if not m:
+        return None
+    try:
+        val = json.loads(m.group(0))
+        if isinstance(val, list):
+            return val
+    except Exception:
+        return None
+    return None
+
+
+async def pick_verses(situation: str, verse_pool, count: int = 6) -> list:
+    """
+    Spec contract:
+    - Respond with ONLY a JSON array of verse_key strings.
+    - Input verse_pool is expected to be a list of verse_key strings.
+    """
+    if not verse_pool:
+        return []
+
+    # Ensure verse_pool is list[str]
+    verse_pool_strings = [str(v) for v in verse_pool]
+
+    prompt = (
+        "You are a Quran scholar. Given this situation: "
+        f"\"{situation}\"\n"
+        "From these verse keys: "
+        f"{verse_pool_strings}\n"
+        f"Pick the {count} most spiritually relevant verse keys for this person.\n"
+        "Respond with ONLY a JSON array of verse_key strings, e.g. "
+        "[\"2:286\",\"94:5\",\"13:28\",\"39:53\",\"2:153\",\"3:173\"]\n"
+        "No explanation. Just the JSON array."
     )
-    r = client.chat.completions.create(
-        model=MODEL,
-        max_tokens=60,
-        messages=[{"role": "user", "content": query}]
-    )
-    return r.choices[0].message.content.strip()
+
+    try:
+        resp = _client.messages.create(
+            model=MODEL,
+            max_tokens=200,
+            temperature=0.2,
+            messages=[{"role": "user", "content": prompt}],
+        )
+        raw = resp.content[0].text if resp.content else ""
+        parsed = _extract_json_array(raw)
+        if not isinstance(parsed, list):
+            raise ValueError("Failed to parse JSON array")
+
+        # Normalize to strings and deduplicate preserving order
+        out = []
+        seen = set()
+        for x in parsed:
+            k = str(x).strip()
+            if k and k not in seen:
+                seen.add(k)
+                out.append(k)
+        return out[:count]
+    except Exception as e:
+        # Fallback: first N from pool
+        return [str(v) for v in verse_pool_strings[:count]]
+
+
+def _generic_reflection() -> str:
+    return "This verse speaks to your situation — may it bring you peace and clarity."
+
 
 async def generate_reflection(
     situation: str,
     verse_key: str,
     translation: str,
     tafsir_en: str = "",
-    tafsir_ar: str = ""
+    tafsir_ar: str = "",
 ) -> str:
-    lang = detect_language(situation)
-    if lang == "ar":
-        tafsir_context = ("السياق التفسيري: " + tafsir_ar + "\n\n") if tafsir_ar else ""
-        prompt = (
-            "أنت عالم إسلامي رحيم. "
-            + tafsir_context
-            + "اكتب تأملاً دافئاً من 3 جمل يربط هذه الآية القرآنية بحالة الشخص. "
-            "بضمير المخاطب، بأسلوب مشجع وليس وعظي. لا تتعارض مع التفسير. باللغة العربية فقط.\n\n"
-            "الحالة: " + situation + "\n"
-            "الآية (" + verse_key + "): " + translation + "\n\n"
-            "التأمل:"
-        )
-    else:
-        tafsir_context = ("Tafsir context: " + tafsir_en + "\n\n") if tafsir_en else ""
-        prompt = (
-            "You are a compassionate Islamic scholar. "
-            + tafsir_context
-            + "Using this tafsir as your scholarly foundation, write a warm personal "
-            "3-sentence reflection connecting this verse to the person's situation. "
-            "Second person. Hopeful, not preachy. Do not contradict the tafsir.\n\n"
-            "Situation: " + situation + "\n"
-            "Verse (" + verse_key + "): " + translation + "\n\n"
-            "Reflection:"
-        )
-    r = client.chat.completions.create(
-        model=MODEL,
-        max_tokens=200,
-        messages=[{"role": "user", "content": prompt}]
-    )
-    return r.choices[0].message.content.strip()
-
-async def pick_verses(situation: str, candidates: list, count: int = 6) -> list:
-    if not candidates:
-        return []
-
-    candidate_text = "\n".join([
-        v["verse_key"] + ": " + v.get("translation", "")[:80]
-        for v in candidates
-    ])
-
+    """
+    Spec contract (English behavior required by master prompt):
+    Prompt:
+    You are a compassionate Islamic scholar and spiritual guide.
+    ...
+    Just the reflection.
+    """
     prompt = (
-        "You are a verse selector. Return ONLY a comma-separated list of verse keys.\n"
-        "Format example: 2:153,94:5,13:28,39:53,2:286,3:200\n"
-        "No labels. No explanation. No numbering. No Arabic text. No extra words. "
-        "Just the keys separated by commas.\n\n"
-        "Situation: " + situation + "\n\n"
-        "Pick the " + str(count) + " most relevant from these candidates:\n"
-        + candidate_text
-        + "\n\nReturn ONLY comma-separated verse keys:"
+        "You are a compassionate Islamic scholar and spiritual guide.\n"
+        f"A person is going through this: \"{situation}\"\n"
+        f"This Quran verse was selected for them ({verse_key}): \"{translation}\"\n"
+        "Write a 2-3 sentence personal reflection connecting the verse to their situation.\n"
+        "Warm, empathetic, Islamic in tone. Not too long. Speak directly to them.\n"
+        "Do not quote the verse again. Do not add Islamic greetings.\n"
+        "Just the reflection."
     )
 
-    r = client.chat.completions.create(
-        model=MODEL,
-        max_tokens=80,
-        messages=[{"role": "user", "content": prompt}]
-    )
-    raw = r.choices[0].message.content.strip()
+    try:
+        # Tafsir is currently included in spec for context; we pass it implicitly.
+        # If provided, include in the prompt after the instruction, without changing required output style.
+        if tafsir_en or tafsir_ar:
+            tafsir_context = f"\n\nTafsir context (for scholarly guidance):\nEN: {tafsir_en or ''}\nAR: {tafsir_ar or ''}\n"
+            prompt = prompt + tafsir_context + "\nRemember: write only the reflection."
 
-    # Robust parser handles any format: "2:153,94:5" or "2/153\n94/5" or garbage Arabic text
-    keys = extract_verse_keys(raw)
+        resp = _client.messages.create(
+            model=MODEL,
+            max_tokens=220,
+            temperature=0.4,
+            messages=[{"role": "user", "content": prompt}],
+        )
+        raw = resp.content[0].text.strip() if resp.content else ""
+        # Basic sanity
+        if not raw:
+            return _generic_reflection()
+        return raw
+    except Exception:
+        return _generic_reflection()
 
-    # Fallback: if nothing parsed, use first N candidates directly
-    if not keys:
-        keys = [v["verse_key"] for v in candidates[:count]]
 
-    return keys[:count]
 async def generate_all_reflections(situation: str, verses: list) -> list:
-    """Generate all reflections in ONE API call instead of 6 separate ones."""
-    verses_text = ""
-    for i, v in enumerate(verses):
-        verses_text += f"{i+1}. Verse {v['verse_key']}: {v['translation'][:120]}\n"
-    
-    lang = detect_language(situation)
-    if lang == "ar":
-        prompt = f"""اكتب {len(verses)} تأملات قصيرة (2-3 جمل لكل واحدة) تربط هذه الآيات بحالة الشخص. بضمير المخاطب، مشجع وليس وعظي. باللغة العربية.
-
-الحالة: {situation}
-
-الآيات:
-{verses_text}
-
-اكتب الإجابة بهذا الشكل بالضبط:
-1: [التأمل الأول]
-2: [التأمل الثاني]
-وهكذا..."""
-    else:
-        prompt = f"""Write {len(verses)} short reflections (2-3 sentences each) connecting these Quran verses to the person's situation. Second person, hopeful, not preachy.
-
-Situation: {situation}
-
-Verses:
-{verses_text}
-
-Reply in this exact format:
-1: [reflection for verse 1]
-2: [reflection for verse 2]
-etc."""
-
-    r = client.chat.completions.create(
-        model=MODEL, max_tokens=800,
-        messages=[{"role": "user", "content": prompt}]
-    )
-    
-    raw = r.choices[0].message.content.strip()
-    reflections = []
-    for i in range(1, len(verses) + 1):
-        import re
-        match = re.search(rf"{i}:\s*(.+?)(?=\n{i+1}:|$)", raw, re.DOTALL)
-        if match:
-            reflections.append(match.group(1).strip())
-        else:
-            reflections.append("This verse speaks directly to your heart in this moment.")
-    return reflections
+    """
+    Not used by the current /api/search implementation, but keep for compatibility.
+    Returns generic reflections per verse on failure.
+    """
+    out = []
+    for v in verses or []:
+        try:
+            out.append(await generate_reflection(
+                situation=situation,
+                verse_key=v.get("verse_key", ""),
+                translation=v.get("translation", ""),
+                tafsir_en=v.get("tafsir_en", "") or "",
+                tafsir_ar=v.get("tafsir_ar", "") or "",
+            ))
+        except Exception:
+            out.append(_generic_reflection())
+    return out

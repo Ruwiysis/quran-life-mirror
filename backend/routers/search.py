@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from fastapi import APIRouter, HTTPException
 from models import SituationRequest, VerseResult
-from services.claude_service import generate_reflection, pick_verses, generate_all_reflections
+from services.claude_service import generate_reflection, pick_verses
 from services.quran_service import get_verse, get_audio_url, get_surah_name
 from typing import List
 import asyncio, random
@@ -198,7 +198,7 @@ async def search_situation(request: SituationRequest):
         emotions = detect_emotions_smart(request.situation)
         verse_pool = build_verse_pool(emotions)
         try:
-            picked_keys = await pick_verses(request.situation, [{"verse_key": k} for k in verse_pool], count=6)
+            picked_keys = await pick_verses(request.situation, verse_pool, count=6)
         except Exception:
             picked_keys = verse_pool[:6]
 
@@ -208,21 +208,26 @@ async def search_situation(request: SituationRequest):
 
         async def fetch_and_reflect(verse_key: str):
             try:
-                # ✅ No tafsir here — fetched lazily on demand via /api/verse/{key}/tafsir
+                # Fetch verse data including tafsir EN/AR (spec requires tafsir passed into Claude for reflection)
                 verse_data, audio_url, surah_name = await asyncio.gather(
                     get_verse(verse_key),
                     get_audio_url(verse_key),
-                    get_surah_name(verse_key)
+                    get_surah_name(verse_key),
                 )
                 if not verse_data or not verse_data.get("translation"):
                     return None
+
+                tafsir_en = verse_data.get("tafsir_en") or ""
+                tafsir_ar = verse_data.get("tafsir_ar") or ""
+
                 reflection = await generate_reflection(
                     request.situation,
                     verse_key,
                     verse_data.get("translation", ""),
-                    tafsir_en="",
-                    tafsir_ar=""
+                    tafsir_en=tafsir_en,
+                    tafsir_ar=tafsir_ar,
                 )
+
                 return VerseResult(
                     verse_key=verse_key,
                     surah_name=surah_name,
@@ -231,8 +236,8 @@ async def search_situation(request: SituationRequest):
                     audio_url=audio_url or "",
                     reflection=reflection,
                     relevance_score=relevance_scores.get(verse_key, 0.5),
-                    tafsir_en=None,
-                    tafsir_ar=None,
+                    tafsir_en=tafsir_en or None,
+                    tafsir_ar=tafsir_ar or None,
                 )
             except Exception as e:
                 print(f"Error processing verse {verse_key}: {e}")

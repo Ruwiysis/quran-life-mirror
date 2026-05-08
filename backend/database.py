@@ -32,9 +32,10 @@ def init_db():
     db.execute("""
         CREATE TABLE IF NOT EXISTS bookmarks (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id TEXT NOT NULL,
             verse_key TEXT NOT NULL,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            UNIQUE(verse_key)
+            UNIQUE(user_id, verse_key)
         )
     """)
     db.commit()
