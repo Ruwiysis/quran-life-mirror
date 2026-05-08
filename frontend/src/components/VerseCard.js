@@ -58,7 +58,7 @@ function stripArabic(text) {
     .trim();
 }
 
-export default function VerseCard({ verse, situation, index, onBookmarkSaved, readOnly = false }) {
+export default function VerseCard({ verse, situation, index, onBookmarkSaved, readOnly = false, hideTranslation = false }) {
   const { lang } = useContext(LangContext);
   const t = T[lang];
   const isAr = lang === 'ar';
@@ -171,7 +171,7 @@ export default function VerseCard({ verse, situation, index, onBookmarkSaved, re
         borderRight: `3px solid var(--gold)`,
       }}>{verse.arabic_text}</div>
 
-      {!isAr && (
+      {!isAr && !hideTranslation && (
         <p style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: '1.15rem', fontStyle: 'italic', color: 'var(--text)', lineHeight: 1.8, marginBottom: '16px' }}>
           "{verse.translation}"
         </p>
@@ -220,10 +220,10 @@ export default function VerseCard({ verse, situation, index, onBookmarkSaved, re
 
       <div style={{ height: '1px', background: `linear-gradient(90deg,transparent,var(--border),transparent)`, margin: '16px 0' }} />
 
-      <div style={{ fontSize: '0.72rem', fontWeight: 500, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--gold)', marginBottom: '10px' }}>{t.reflection}</div>
-      <p style={{ fontSize: '0.95rem', color: 'var(--text-secondary)', lineHeight: 1.8, marginBottom: '20px', fontFamily }}>{verse.reflection}</p>
+      {!hideTranslation && <><div style={{ fontSize: '0.72rem', fontWeight: 500, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--gold)', marginBottom: '10px' }}>{t.reflection}</div>
+      <p style={{ fontSize: '0.95rem', color: 'var(--text-secondary)', lineHeight: 1.8, marginBottom: '20px', fontFamily }}>{verse.reflection}</p></>}
 
-      {!saved && !readOnly && (
+      {!readOnly && !saved && (
         <div style={{ marginBottom: '16px' }}>
           <div style={{ fontSize: '0.7rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: '8px', fontFamily }}>{t.howFeel}</div>
           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
@@ -239,7 +239,7 @@ export default function VerseCard({ verse, situation, index, onBookmarkSaved, re
         </div>
       )}
 
-      {!saved && !readOnly && (
+      {!readOnly && !saved && (
         <div style={{ marginBottom: '16px' }}>
           <textarea placeholder={t.addNote} value={note} onChange={e => setNote(e.target.value)} style={{
             width: '100%', minHeight: '70px', background: `rgba(var(--text-rgb), 0.05)`,
@@ -252,13 +252,18 @@ export default function VerseCard({ verse, situation, index, onBookmarkSaved, re
       )}
 
       {!readOnly && <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-        <button onClick={handleSave} style={{
+        {!saved && <button onClick={handleSave} style={{
           fontSize: '0.8rem', fontWeight: 500, padding: '9px 20px', borderRadius: '20px',
-          cursor: saved ? 'default' : 'pointer', border: 'none', fontFamily, transition: 'all 0.2s',
-          background: saved ? 'var(--gold-dim)' : `rgba(var(--text-rgb), 0.05)`,
-          color: saved ? 'var(--gold-light)' : 'var(--gold)',
-          outline: saved ? 'none' : `1px solid var(--border)`,
-        }}>{saved ? t.saved : t.saveJournal}</button>
+          cursor: 'pointer', border: 'none', fontFamily, transition: 'all 0.2s',
+          background: `rgba(var(--text-rgb), 0.05)`,
+          color: 'var(--gold)',
+          outline: `1px solid var(--border)`,
+        }}>{t.saveJournal}</button>}
+        
+        {saved && <div style={{
+          fontSize: '0.85rem', color: 'var(--gold)', padding: '9px 20px',
+          background: 'var(--gold-dim)', borderRadius: '20px', fontFamily
+        }}>✓ Saved to Journal</div>}
 
         {isLoggedIn && (
           <button onClick={handleBookmark} style={{
