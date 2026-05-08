@@ -28,15 +28,7 @@ export default function BookmarksPanel({ isOpen, onClose, refreshTrigger }) {
         if (Array.isArray(data)) {
           data.forEach(b => {
             if (b.verse) {
-              verseMap[b.verse_key] = {
-                verse_key: b.verse_key,
-                surah_name: b.verse.surah_name || b.verse_key.split(':')[0],
-                arabic_text: b.verse.arabic || b.verse.arabic_text || '',
-                translation: b.verse.translation || '',
-                audio_url: b.verse.audio_url || '',
-                reflection: b.verse.reflection || '',
-                relevance_score: 1.0,
-              };
+              verseMap[b.verse_key] = b.verse;
             }
           });
         }
@@ -136,7 +128,7 @@ export default function BookmarksPanel({ isOpen, onClose, refreshTrigger }) {
                 </div>
                 {surahVerses.map((verse, i) => (
                   <div key={verse.verse_key} style={{ marginBottom: '16px' }}>
-                    <VerseCard verse={verse} index={i} lang={lang} />
+                    <VerseCard verse={verse} index={i} lang={lang} readOnly={true} hideTranslation={lang === 'ar'} />
                   </div>
                 ))}
               </div>

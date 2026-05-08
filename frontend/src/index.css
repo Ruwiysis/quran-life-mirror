@@ -20,6 +20,7 @@
 }
 
 :root[data-theme="light"] {
+  --gradient-opacity: 0;
   --bg: #faf8f5;
   --bg-secondary: #ffffff;
   --text: #1a1a1a;
@@ -33,7 +34,7 @@
   --gold-dim: rgba(201,168,76,0.12);
   --cream: #1a1a1a;
   --cream-dim: rgba(26,26,26,0.6);
-  --muted: rgba(90,90,90,0.6);
+  --muted: #6a6a6a;
   --border: rgba(0,0,0,0.08);
   --glow: 0 0 40px rgba(201,168,76,0.2);
   --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
@@ -53,13 +54,7 @@ body::before{
     radial-gradient(ellipse 80% 50% at 50% -10%, var(--gold-dim) 0%,transparent 70%),
     radial-gradient(ellipse 40% 30% at 80% 80%, rgba(100,80,200,0.03) 0%,transparent 60%);
   pointer-events:none;z-index:0;
-}
-
-/* Light theme: remove the "dark cloud" overlay by tinting gradients much lighter */
-:root[data-theme="light"] body::before{
-  background-image:
-    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(201,168,76,0.18) 0%,transparent 70%),
-    radial-gradient(ellipse 40% 30% at 80% 80%, rgba(100,80,200,0.01) 0%,transparent 60%);
+  opacity: var(--gradient-opacity, 1);
 }
 #root{position:relative;z-index:1;}
 h1,h2,h3{font-family:'Cormorant Garamond',serif;font-weight:300;}

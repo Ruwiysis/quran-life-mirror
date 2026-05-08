@@ -4,12 +4,12 @@ import { LangContext } from '../App';
 import { useAuth } from '../context/AuthContext';
 import VerseCard from '../components/VerseCard';
 
-const API = process.env.REACT_APP_API_URL || '';
+const API = import.meta.env.VITE_API_URL || '';
 
 export default function Bookmarks() {
   const { lang } = useContext(LangContext);
   const isAr = lang === 'ar';
-  const { isLoggedIn, token, loading: authLoading } = useAuth();
+  const { isLoggedIn, token } = useAuth();
   const fontFamily = isAr ? "'Noto Sans Arabic',sans-serif" : "'DM Sans',sans-serif";
 
   const [verses, setVerses] = useState({});
@@ -17,12 +17,10 @@ export default function Bookmarks() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    if (authLoading) return;
     if (!isLoggedIn || !token) {
       setLoading(false);
       return;
     }
-
     const fetchBookmarks = async () => {
       try {
         const { data } = await axios.get(API + '/api/user/bookmarks-with-verses', {
@@ -31,15 +29,7 @@ export default function Bookmarks() {
         const verseMap = {};
         data.forEach(b => {
           if (b.verse) {
-            verseMap[b.verse_key] = {
-              verse_key: b.verse_key,
-              surah_name: b.verse.surah_name || b.verse_key.split(':')[0],
-              arabic_text: b.verse.arabic || b.verse.arabic_text || '',
-              translation: b.verse.translation || '',
-              audio_url: b.verse.audio_url || '',
-              reflection: b.verse.reflection || '',
-              relevance_score: 1.0,
-            };
+            verseMap[b.verse_key] = b.verse;
           }
         });
         setVerses(verseMap);
@@ -49,10 +39,8 @@ export default function Bookmarks() {
         setLoading(false);
       }
     };
-
-    setLoading(true);
     fetchBookmarks();
-  }, [isLoggedIn, token, authLoading]);
+  }, [isLoggedIn, token]);
 
   const groupedVerses = {};
   Object.values(verses).forEach(v => {
